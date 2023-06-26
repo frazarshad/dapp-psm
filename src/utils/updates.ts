@@ -89,7 +89,6 @@ const watchInstanceIds = async (
         if (!watchedAnchors.has(anchorPetname)) {
           watchedAnchors.add(anchorPetname);
 
-          // TODO: Better error handling (toast?)
           watchMetrics(watcher, setters.setMetricsIndex, anchorPetname, err => {
             console.error('Error watching metrics for', anchorPetname, err);
             onErr(err);
