@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 declare module '@agoric/web-components' {
-  export const makeAgoricKeplrConnection;
+  export const makeAgoricWalletConnection;
   export const AgoricKeplrConnectionErrors;
   export const BridgeProtocol;
 }
@@ -13,13 +13,6 @@ declare module '@agoric/web-components/react' {
 
 declare module '@agoric/notifier' {
   export const makeAsyncIterableFromNotifier;
-}
-
-declare module '@agoric/casting' {
-  export type Leader = any;
-  export const makeFollower;
-  export const iterateLatest;
-  export const makeLeader;
 }
 
 declare module '@agoric/wallet-backend' {

@@ -1,98 +1,120 @@
 import { makeAsyncIterableFromNotifier as iterateNotifier } from '@agoric/notifier';
-import { iterateLatest, makeFollower, Leader } from '@agoric/casting';
 import { dappConfig } from 'config';
 import type { Metrics, GovernedParams, BrandInfo } from 'store/app';
-import type { Marshal } from '@endo/marshal';
 
 import { PursesJSONState } from '@agoric/wallet-backend';
+import {
+  AgoricChainStoragePathKind,
+  type ChainStorageWatcher,
+} from '@agoric/rpc';
+
+type GovernedParamsData = {
+  current: {
+    GiveMintedFee: { value: Ratio };
+    MintLimit: { value: Amount<'nat'> };
+    WantMintedFee: { value: Ratio };
+  };
+};
 
 const watchGovernance = async (
-  leader: Leader,
-  unserializer: Marshal<any>,
+  watcher: ChainStorageWatcher,
   setGovernedParamsIndex: ContractSetters['setGovernedParamsIndex'],
-  anchorPetname: string
+  anchorPetname: string,
+  onErr: (err: string) => void
 ) => {
-  // E.g. ':published.psm.IST.AUSD.governance'
+  // E.g. 'published.psm.IST.AUSD.governance'
   const spec = dappConfig.INSTANCE_PREFIX + anchorPetname + '.governance';
-  const f = makeFollower(spec, leader, { unserializer });
 
-  for await (const { value } of iterateLatest(f)) {
-    const current = value.current;
-    const giveMintedFee = current.GiveMintedFee.value;
-    const mintLimit = current.MintLimit.value;
-    const wantMintedFee = current.WantMintedFee.value;
+  watcher.watchLatest<GovernedParamsData>(
+    [AgoricChainStoragePathKind.Data, spec],
+    value => {
+      const current = value.current;
+      const giveMintedFee = current.GiveMintedFee.value;
+      const mintLimit = current.MintLimit.value;
+      const wantMintedFee = current.WantMintedFee.value;
 
-    setGovernedParamsIndex([
-      [anchorPetname, { giveMintedFee, mintLimit, wantMintedFee }],
-    ]);
-  }
+      setGovernedParamsIndex([
+        [anchorPetname, { giveMintedFee, mintLimit, wantMintedFee }],
+      ]);
+    },
+    onErr
+  );
 };
 
 const watchMetrics = async (
-  leader: Leader,
-  unserializer: Marshal<any>,
+  watcher: ChainStorageWatcher,
   setMetricsIndex: ContractSetters['setMetricsIndex'],
-  anchorPetname: string
+  anchorPetname: string,
+  onErr: (err: string) => void
 ) => {
-  // E.g. ':published.psm.IST.AUSD.metrics'
+  // E.g. 'published.psm.IST.AUSD.metrics'
   const spec = dappConfig.INSTANCE_PREFIX + anchorPetname + '.metrics';
-  const f = makeFollower(spec, leader, { unserializer });
 
-  for await (const { value } of iterateLatest(f)) {
-    console.log('got metrics', value);
-    setMetricsIndex([[anchorPetname, value]]);
-  }
+  watcher.watchLatest<Metrics>(
+    [AgoricChainStoragePathKind.Data, spec],
+    value => {
+      console.debug('got metrics', value);
+      setMetricsIndex([[anchorPetname, value]]);
+    },
+    onErr
+  );
 };
 
 const watchInstanceIds = async (
-  leader: Leader,
+  watcher: ChainStorageWatcher,
   setters: ContractSetters,
-  walletUnserializer: Marshal<any>
+  onErr: (err: string) => void
 ) => {
-  const f = makeFollower(dappConfig.INSTANCES_KEY, leader, {
-    unserializer: walletUnserializer,
-    proof: 'none',
-  });
-
   const watchedAnchors = new Set();
 
-  for await (const { value } of iterateLatest(f)) {
-    const INSTANCE_NAME_PREFIX = 'psm-IST-';
-    // Remove "psm-IST-" prefix so they're like ["AUSD", "board012"]
-    const PSMEntries = (value as [string, string][])
-      .filter(entry => entry[0].startsWith(INSTANCE_NAME_PREFIX))
-      .map(
-        ([key, boardId]) =>
-          [key.slice(INSTANCE_NAME_PREFIX.length), boardId] as [string, string]
-      );
-
-    setters.setInstanceIds(PSMEntries);
-
-    PSMEntries.forEach(([anchorPetname]) => {
-      if (!watchedAnchors.has(anchorPetname)) {
-        watchedAnchors.add(anchorPetname);
-
-        // TODO: Better error handling (toast?)
-        watchMetrics(
-          leader,
-          walletUnserializer,
-          setters.setMetricsIndex,
-          anchorPetname
-        ).catch(e =>
-          console.error('Error watching metrics for', anchorPetname, e)
+  watcher.watchLatest(
+    [AgoricChainStoragePathKind.Data, dappConfig.INSTANCES_KEY],
+    value => {
+      console.debug('Got instances', value);
+      const INSTANCE_NAME_PREFIX = 'psm-IST-';
+      // Remove "psm-IST-" prefix so they're like ["AUSD", "board012"]
+      const PSMEntries = (value as [string, string][])
+        .filter(entry => entry[0].startsWith(INSTANCE_NAME_PREFIX))
+        .map(
+          ([key, boardId]) =>
+            [key.slice(INSTANCE_NAME_PREFIX.length), boardId] as [
+              string,
+              string
+            ]
         );
 
-        watchGovernance(
-          leader,
-          walletUnserializer,
-          setters.setGovernedParamsIndex,
-          anchorPetname
-        ).catch(e =>
-          console.error('Error watching governed params for', anchorPetname, e)
-        );
-      }
-    });
-  }
+      setters.setInstanceIds(PSMEntries);
+
+      PSMEntries.forEach(([anchorPetname]) => {
+        if (!watchedAnchors.has(anchorPetname)) {
+          watchedAnchors.add(anchorPetname);
+
+          watchMetrics(watcher, setters.setMetricsIndex, anchorPetname, err => {
+            console.error('Error watching metrics for', anchorPetname, err);
+            onErr(err);
+          });
+
+          watchGovernance(
+            watcher,
+            setters.setGovernedParamsIndex,
+            anchorPetname,
+            err => {
+              console.error(
+                'Error watching governance for',
+                anchorPetname,
+                err
+              );
+              onErr(err);
+            }
+          );
+        }
+      });
+    },
+    err => {
+      console.error('Error watching instance ids', err);
+      onErr(err);
+    }
+  );
 };
 
 declare type ContractSetters = {
@@ -102,14 +124,11 @@ declare type ContractSetters = {
 };
 
 export const watchContract = async (
-  chainConnection: { leader: any; unserializer: Marshal<any> },
-  setters: ContractSetters
+  watcher: ChainStorageWatcher,
+  setters: ContractSetters,
+  onErr: (err: string) => void
 ) => {
-  const { leader, unserializer } = chainConnection;
-
-  watchInstanceIds(leader, setters, unserializer).catch((err: Error) =>
-    console.error('got loadInstanceIds err', err)
-  );
+  watchInstanceIds(watcher, setters, onErr);
 };
 
 export const watchPurses = async (

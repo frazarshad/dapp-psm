@@ -3,11 +3,9 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { toast } from 'react-toastify';
 import { Oval } from 'react-loader-spinner';
 import {
-  makeAgoricKeplrConnection,
+  makeAgoricWalletConnection,
   AgoricKeplrConnectionErrors as Errors,
 } from '@agoric/web-components';
-import 'react-toastify/dist/ReactToastify.css';
-
 import {
   brandToInfoAtom,
   pursesAtom,
@@ -22,9 +20,14 @@ import {
 import { watchContract, watchPurses } from 'utils/updates';
 import NetworkDropdown from 'components/NetworkDropdown';
 import TermsDialog, { currentTermsIndex } from './TermsDialog';
-
-import 'styles/globals.css';
 import clsx from 'clsx';
+import { makeAgoricChainStorageWatcher } from '@agoric/rpc';
+import { sample } from 'lodash-es';
+import { makeImportContext } from '@agoric/smart-wallet/src/marshal-contexts';
+
+import 'react-toastify/dist/ReactToastify.css';
+import 'styles/globals.css';
+import { loadNetworkConfig } from 'utils/networkConfig';
 
 const autoCloseDelayMs = 7000;
 
@@ -54,11 +57,18 @@ const ChainConnection = () => {
       (err: Error) => console.error('got watchPurses err', err)
     );
 
-    watchContract(chainConnection, {
-      setMetricsIndex,
-      setGovernedParamsIndex,
-      setInstanceIds,
-    });
+    watchContract(
+      chainConnection.watcher,
+      {
+        setMetricsIndex,
+        setGovernedParamsIndex,
+        setInstanceIds,
+      },
+      () =>
+        toast.error(
+          'Error reading contract data from chain. See debug console for more info.'
+        )
+    );
   }, [
     chainConnection,
     mergeBrandToInfo,
@@ -80,8 +90,24 @@ const ChainConnection = () => {
     let connection;
     setConnectionInProgress(true);
     try {
-      connection = await makeAgoricKeplrConnection(networkConfig.url);
-      setChainConnection(connection);
+      const { rpcAddrs, chainName } = await loadNetworkConfig(
+        networkConfig.url
+      );
+      const rpc = sample(rpcAddrs);
+      assert(rpc, 'netconfig missing rpcAddrs');
+      const context = makeImportContext().fromBoard;
+      const watcher = makeAgoricChainStorageWatcher(
+        rpc,
+        chainName,
+        context.unserialize
+      );
+      connection = await makeAgoricWalletConnection(watcher);
+      setChainConnection({
+        ...connection,
+        watcher,
+        chainId: chainName,
+        unserializer: context,
+      });
     } catch (e: any) {
       switch (e.message) {
         case Errors.enableKeplr:
@@ -112,6 +138,9 @@ const ChainConnection = () => {
               autoClose: autoCloseDelayMs,
             }
           );
+          break;
+        default:
+          toast.error('Error connecting to network.');
           break;
       }
     } finally {
