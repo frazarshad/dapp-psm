@@ -22,7 +22,7 @@
     "@agoric/rpc": "^0.0.2-dev-2c6fbc5.0",
     "@agoric/smart-wallet": "^0.5.3",
     "@agoric/ui-components": "^0.3.4-dev-f5341af.0",
-    "@agoric/web-components": "^0.6.4-dev-2c6fbc5.0",
+    "@agoric/web-components": "0.9.1-dev-4dd5c43.0",
     "@agoric/zoe": "^0.25.4-dev-f5341af.0",
     "@endo/eventual-send": "^0.16.0",
     "@endo/init": "^0.5.53",

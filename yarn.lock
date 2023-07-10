@@ -520,10 +520,10 @@
     eslint-plugin-eslint-comments "^3.1.2"
     import-meta-resolve "^2.2.1"
 
-"@agoric/web-components@^0.6.4-dev-2c6fbc5.0":
-  version "0.6.4-dev-f4286dd.0"
-  resolved "https://registry.yarnpkg.com/@agoric/web-components/-/web-components-0.6.4-dev-f4286dd.0.tgz#78738c84367d9c56964f510f2f6911cc4c6a8c53"
-  integrity sha512-DVtzVCVkCPaOF3rceM5SbOay+D+6URbQv9Nim0oY1dBfbONOxoXzMfTXDV3YaeUGsglOzY5UFVTFR5awWsYA+g==
+"@agoric/web-components@0.9.1-dev-4dd5c43.0":
+  version "0.9.1-dev-4dd5c43.0"
+  resolved "https://registry.yarnpkg.com/@agoric/web-components/-/web-components-0.9.1-dev-4dd5c43.0.tgz#4dbadc8482e6d56f3df42e523ad3132507c40b4b"
+  integrity sha512-YakvXbHQTTuhnRnMgWtzIyZRnwQ8voxUCh7/j3bnxjRtJ1VlEqkqPaeRbfhnm7/bMACkQZWbcSs/zF4Svs+Auw==
   dependencies:
     "@agoric/assert" "^0.6.0"
     "@agoric/cache" "^0.3.2"
