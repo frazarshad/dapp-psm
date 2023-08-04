@@ -1,8 +1,7 @@
 import type { PursesJSONState } from '@agoric/wallet-backend';
+import type { WalletBridge } from 'store/app';
 import { E } from '@endo/eventual-send';
-
 import { SwapDirection } from 'store/swap';
-import { WalletBridge } from 'store/app';
 import { AmountMath } from '@agoric/ertp';
 
 type SwapContext = {

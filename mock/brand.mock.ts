@@ -8,4 +8,5 @@ export const mockBrand = () =>
     getDisplayInfo: () => ({
       assetKind: AssetKind.NAT,
     }),
+    getAmountShape: () => '',
   });
