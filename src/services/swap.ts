@@ -1,8 +1,8 @@
 import type { PursesJSONState } from '@agoric/wallet-backend';
+import type { WalletBridge } from 'store/app';
 import { E } from '@endo/eventual-send';
-
 import { SwapDirection } from 'store/swap';
-import { WalletBridge } from 'store/app';
+import { AmountMath } from '@agoric/ertp';
 
 type SwapContext = {
   wallet: WalletBridge;
@@ -30,7 +30,11 @@ export const makeSwapOffer = async ({
       ? 'makeWantMintedInvitation'
       : 'makeGiveMintedInvitation';
 
-  const serializedInstance = await E(marshal).serialize(instanceId);
+  const [serializedInstance, serializedIn, serializedOut] = await Promise.all([
+    E(marshal).serialize(instanceId),
+    E(marshal).serialize(AmountMath.make(fromPurse.brand, fromValue)),
+    E(marshal).serialize(AmountMath.make(toPurse.brand, toValue)),
+  ]);
 
   const offerConfig = {
     publicInvitationMaker: method,
@@ -38,14 +42,12 @@ export const makeSwapOffer = async ({
     proposalTemplate: {
       give: {
         In: {
-          pursePetname: fromPurse.pursePetname,
-          value: Number(fromValue),
+          amount: serializedIn,
         },
       },
       want: {
         Out: {
-          pursePetname: toPurse.pursePetname,
-          value: Number(toValue),
+          amount: serializedOut,
         },
       },
     },

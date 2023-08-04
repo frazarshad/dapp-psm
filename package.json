@@ -43,6 +43,7 @@
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "framer-motion": "^7.2.1",
+    "happy-dom": "^10.7.0",
     "jotai": "^1.8.0",
     "lodash-es": "4.17.21",
     "patch-package": "^7.0.0",
