@@ -1,9 +1,6 @@
 import { useAtomValue } from 'jotai';
-
 import { displayFunctionsAtom } from 'store/app';
-
-// Ambient
-import '@agoric/ertp/src/types';
+import type { Brand } from '@agoric/ertp/src/types';
 
 const AssetListItem = ({ brand }: { brand: Brand }) => {
   const { displayBrandIcon, displayBrandPetname } =

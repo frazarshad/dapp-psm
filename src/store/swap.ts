@@ -1,6 +1,5 @@
 import { atom } from 'jotai';
 import { AmountMath } from '@agoric/ertp';
-
 import {
   displayFunctionsAtom,
   governedParamsIndexAtom,
@@ -16,9 +15,7 @@ import {
   filterPursesByBrand,
 } from 'utils/helpers';
 import type { Metrics, GovernedParams } from 'store/app';
-
-// Ambient
-import '@agoric/ertp/src/types';
+import type { Amount } from '@agoric/ertp/src/types';
 
 export enum SwapError {
   EMPTY_AMOUNTS = 'Please enter the amounts first.',
@@ -64,8 +61,8 @@ export const governedParamsAtom = atom<GovernedParams | null>(get => {
   return get(governedParamsIndexAtom).get(selectedPetname) ?? null;
 });
 
-/** The contract instance id for the currently selected anchor. */
-export const instanceIdAtom = atom<string | null>(get => {
+/** The contract instance for the currently selected anchor. */
+export const instanceAtom = atom<string | null>(get => {
   const selectedPetname = get(selectedAnchorPetnameAtom);
   if (!selectedPetname) {
     return null;
@@ -135,6 +132,7 @@ const mintedUnitAmountAtom = atom(get => {
 });
 
 const fromAmountInnerAtom = atom<Amount<'nat'> | null>(null);
+
 export const fromAmountAtom = atom(
   get => get(fromAmountInnerAtom),
   (get, set, newFromAmount: Amount<'nat'>) => {
@@ -240,6 +238,11 @@ export const toAmountAtom = atom(
     set(toAmountInnerAtom, newToAmount);
   }
 );
+
+export const clearAmountInputsAtom = atom(null, (_, set) => {
+  set(fromAmountInnerAtom, null);
+  set(toAmountInnerAtom, null);
+});
 
 const swapDirectionInnerAtom = atom<SwapDirection>(SwapDirection.WantMinted);
 export const swapDirectionAtom = atom(

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { toast } from 'react-toastify';
 import { Oval } from 'react-loader-spinner';
@@ -16,20 +16,56 @@ import {
   chainConnectionAtom,
   networkConfigAtom,
   termsIndexAgreedUponAtom,
+  smartWalletProvisionedAtom,
+  provisionToastIdAtom,
+  ChainConnection as ChainConnectionStore,
 } from 'store/app';
-import { watchContract, watchPurses } from 'utils/updates';
+import {
+  watchContract,
+  watchPurses,
+  watchSmartWalletProvision,
+} from 'utils/updates';
 import NetworkDropdown from 'components/NetworkDropdown';
 import TermsDialog, { currentTermsIndex } from './TermsDialog';
 import clsx from 'clsx';
 import { makeAgoricChainStorageWatcher } from '@agoric/rpc';
 import { sample } from 'lodash-es';
-import { makeImportContext } from '@agoric/smart-wallet/src/marshal-contexts';
+import { loadNetworkConfig } from 'utils/networkConfig';
+import ProvisionSmartWalletDialog from './ProvisionSmartWalletDialog';
 
 import 'react-toastify/dist/ReactToastify.css';
 import 'styles/globals.css';
-import { loadNetworkConfig } from 'utils/networkConfig';
+import { querySwingsetParams } from 'utils/swingsetParams';
 
 const autoCloseDelayMs = 7000;
+
+const useSmartWalletFeeQuery = (
+  chainConnection: ChainConnectionStore | null
+) => {
+  const [smartWalletFee, setFee] = useState<bigint | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchParams = async () => {
+      assert(chainConnection);
+      try {
+        const params = await querySwingsetParams(
+          chainConnection.watcher.rpcAddr
+        );
+        console.debug('swingset params', params);
+        setFee(BigInt(params.params.powerFlagFees[0].fee[0].amount));
+      } catch (e: any) {
+        setError(e);
+      }
+    };
+
+    if (chainConnection) {
+      fetchParams();
+    }
+  }, [chainConnection]);
+
+  return { smartWalletFee, error };
+};
 
 const ChainConnection = () => {
   const [connectionInProgress, setConnectionInProgress] = useState(false);
@@ -40,9 +76,18 @@ const ChainConnection = () => {
   const setMetricsIndex = useSetAtom(metricsIndexAtom);
   const setGovernedParamsIndex = useSetAtom(governedParamsIndexAtom);
   const setInstanceIds = useSetAtom(instanceIdsAtom);
+  const [provisionToastId, setProvisionToastId] = useAtom(provisionToastIdAtom);
+  const smartWalletProvisionRequired = useRef(false);
+  const [isSmartWalletProvisioned, setSmartWalletProvisioned] = useAtom(
+    smartWalletProvisionedAtom
+  );
   const networkConfig = useAtomValue(networkConfigAtom);
   const termsAgreed = useAtomValue(termsIndexAgreedUponAtom);
   const [isTermsDialogOpen, setIsTermsDialogOpen] = useState(false);
+  const [isProvisionDialogOpen, setIsProvisionDialogOpen] = useState(false);
+  const { smartWalletFee, error: smartWalletFeeError } =
+    useSmartWalletFeeQuery(chainConnection);
+
   const areLatestTermsAgreed = termsAgreed === currentTermsIndex;
 
   const handleTermsDialogClose = () => {
@@ -51,7 +96,44 @@ const ChainConnection = () => {
   };
 
   useEffect(() => {
-    if (chainConnection === null) return;
+    if (
+      isSmartWalletProvisioned === false &&
+      !smartWalletProvisionRequired.current
+    ) {
+      if (smartWalletFeeError) {
+        console.error('Swingset params error', smartWalletFeeError);
+        toast.error('Error reading smart wallet provisioning fee from chain.');
+        return;
+      } else if (smartWalletFee) {
+        smartWalletProvisionRequired.current = true;
+        setIsProvisionDialogOpen(true);
+      }
+    } else if (
+      isSmartWalletProvisioned &&
+      smartWalletProvisionRequired.current
+    ) {
+      smartWalletProvisionRequired.current = false;
+      if (provisionToastId) {
+        toast.dismiss(provisionToastId);
+        setProvisionToastId(undefined);
+      }
+      toast.success('Smart wallet successfully provisioned.');
+    }
+  }, [
+    isSmartWalletProvisioned,
+    provisionToastId,
+    setProvisionToastId,
+    smartWalletFeeError,
+    smartWalletFee,
+  ]);
+
+  useEffect(() => {
+    if (!chainConnection) return;
+
+    watchSmartWalletProvision(chainConnection, setSmartWalletProvisioned).catch(
+      (err: Error) =>
+        console.error('Error watching smart wallet provision status', err)
+    );
 
     watchPurses(chainConnection, setPurses, mergeBrandToInfo).catch(
       (err: Error) => console.error('got watchPurses err', err)
@@ -77,6 +159,7 @@ const ChainConnection = () => {
     setMetricsIndex,
     setGovernedParamsIndex,
     setInstanceIds,
+    setSmartWalletProvisioned,
   ]);
 
   const connect = async (checkTerms = true) => {
@@ -94,19 +177,18 @@ const ChainConnection = () => {
         networkConfig.url
       );
       const rpc = sample(rpcAddrs);
-      assert(rpc, 'netconfig missing rpcAddrs');
-      const context = makeImportContext().fromBoard;
-      const watcher = makeAgoricChainStorageWatcher(
-        rpc,
-        chainName,
-        context.unserialize
-      );
+      if (!rpc) {
+        throw new Error(Errors.networkConfig);
+      }
+      const watcher = makeAgoricChainStorageWatcher(rpc, chainName, e => {
+        console.error(e);
+        throw e;
+      });
       connection = await makeAgoricWalletConnection(watcher);
       setChainConnection({
         ...connection,
         watcher,
         chainId: chainName,
-        unserializer: context,
       });
     } catch (e: any) {
       switch (e.message) {
@@ -119,28 +201,8 @@ const ChainConnection = () => {
         case Errors.networkConfig:
           toast.error('Network not found.');
           break;
-        case Errors.noSmartWallet:
-          toast.error(
-            <p>
-              No Agoric smart wallet found for this address. Try creating one at{' '}
-              <a
-                className="underline text-blue-500"
-                href="https://wallet.agoric.app/wallet/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                wallet.agoric.app/wallet/
-              </a>{' '}
-              then try again.
-            </p>,
-            {
-              hideProgressBar: false,
-              autoClose: autoCloseDelayMs,
-            }
-          );
-          break;
         default:
-          toast.error('Error connecting to network.');
+          toast.error('Error connecting to network:' + e.message);
           break;
       }
     } finally {
@@ -179,6 +241,11 @@ const ChainConnection = () => {
       <TermsDialog
         isOpen={isTermsDialogOpen}
         onClose={handleTermsDialogClose}
+      />
+      <ProvisionSmartWalletDialog
+        isOpen={isProvisionDialogOpen}
+        onClose={() => setIsProvisionDialogOpen(false)}
+        smartWalletFee={smartWalletFee}
       />
     </div>
   );

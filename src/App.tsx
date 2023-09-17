@@ -2,7 +2,6 @@ import './installSesLockdown';
 import { motion } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import WalletBridge from 'components/WalletBridge';
 import Swap from 'components/Swap';
 import ChainConnection from 'components/ChainConnection';
 import { INTER_LOGO } from 'assets/assets';
@@ -15,11 +14,16 @@ const App = () => {
   return (
     <>
       <ToastContainer
-        position={'bottom-right'}
+        position="top-right"
         closeOnClick={false}
         newestOnTop={true}
         hideProgressBar={true}
         autoClose={false}
+        style={{ marginTop: 96 }}
+        toastStyle={{
+          boxShadow: '0px 0px 32px -2px var(--color-glow)',
+          wordBreak: 'break-word',
+        }}
       ></ToastContainer>
       <motion.div className="flex flex-col min-h-screen">
         <motion.div className="min-w-screen container p-4 mx-auto flex justify-between items-center">
@@ -31,7 +35,6 @@ const App = () => {
               width="200"
             />
           </a>
-          <WalletBridge />
           <ChainConnection />
         </motion.div>
         <motion.div className="flex-1 min-w-screen container mx-auto flex justify-center mt-16 mb-16">

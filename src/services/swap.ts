@@ -1,58 +1,75 @@
 import type { PursesJSONState } from '@agoric/wallet-backend';
-import type { WalletBridge } from 'store/app';
-import { E } from '@endo/eventual-send';
 import { SwapDirection } from 'store/swap';
 import { AmountMath } from '@agoric/ertp';
+import { toast } from 'react-toastify';
+import type { ContractInvitationSpec } from '@agoric/smart-wallet/src/invitations';
+import type { ChainConnection } from 'store/app';
 
 type SwapContext = {
-  wallet: WalletBridge;
-  instanceId: string;
+  instance: unknown;
   fromPurse: PursesJSONState;
   fromValue: bigint;
   toPurse: PursesJSONState;
   toValue: bigint;
   swapDirection: SwapDirection;
-  marshal: any;
+  chainConnection: ChainConnection;
 };
 
-export const makeSwapOffer = async ({
-  wallet,
-  instanceId,
+export const makeSwapOffer = ({
+  instance,
   fromPurse,
   fromValue,
   toPurse,
   toValue,
   swapDirection,
-  marshal,
+  chainConnection,
 }: SwapContext) => {
-  const method =
+  const publicInvitationMaker =
     swapDirection === SwapDirection.WantMinted
       ? 'makeWantMintedInvitation'
       : 'makeGiveMintedInvitation';
 
-  const [serializedInstance, serializedIn, serializedOut] = await Promise.all([
-    E(marshal).serialize(instanceId),
-    E(marshal).serialize(AmountMath.make(fromPurse.brand, fromValue)),
-    E(marshal).serialize(AmountMath.make(toPurse.brand, toValue)),
-  ]);
+  const spec: ContractInvitationSpec = {
+    source: 'contract',
+    instance,
+    publicInvitationMaker,
+  };
 
-  const offerConfig = {
-    publicInvitationMaker: method,
-    instanceHandle: serializedInstance,
-    proposalTemplate: {
-      give: {
-        In: {
-          amount: serializedIn,
-        },
-      },
-      want: {
-        Out: {
-          amount: serializedOut,
-        },
-      },
+  const [inAmount, outAmount] = [
+    AmountMath.make(fromPurse.brand, fromValue),
+    AmountMath.make(toPurse.brand, toValue),
+  ];
+
+  const proposal = {
+    give: {
+      In: inAmount,
+    },
+    want: {
+      Out: outAmount,
     },
   };
 
-  console.info('OFFER CONFIG: ', offerConfig);
-  wallet.addOffer(offerConfig);
+  const toastId = toast.info('Submitting transaction...', {
+    isLoading: true,
+  });
+  chainConnection.makeOffer(
+    spec,
+    proposal,
+    undefined,
+    ({ status, data }: { status: string; data: object }) => {
+      if (status === 'error') {
+        console.error('Offer error', data);
+        toast.dismiss(toastId);
+        toast.error(`Offer Failed: ${data}`);
+      }
+      if (status === 'refunded') {
+        toast.dismiss(toastId);
+        toast.error('Offer Refunded');
+      }
+      if (status === 'accepted') {
+        toast.dismiss(toastId);
+        toast.success('Swap Completed');
+      }
+    }
+  );
 };

@@ -5,9 +5,7 @@ import { useAtomValue } from 'jotai';
 import { displayFunctionsAtom } from 'store/app';
 import { PursesJSONState } from '@agoric/wallet-backend';
 import { calcSignificantDecimalPlaces } from 'utils/displayFunctions';
-
-// Ambient
-import '@agoric/ertp/src/types';
+import type { Brand } from '@agoric/ertp/src/types';
 
 const DEFAULT_PLACES_TO_SHOW = 2;
 

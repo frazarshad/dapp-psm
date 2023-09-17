@@ -1,12 +1,20 @@
 import { makeAsyncIterableFromNotifier as iterateNotifier } from '@agoric/notifier';
 import { dappConfig } from 'config';
-import type { Metrics, GovernedParams, BrandInfo } from 'store/app';
-
 import { PursesJSONState } from '@agoric/wallet-backend';
 import {
   AgoricChainStoragePathKind,
   type ChainStorageWatcher,
 } from '@agoric/rpc';
+import { makeRatio } from '@agoric/zoe/src/contractSupport/ratio';
+import type {
+  Metrics,
+  GovernedParams,
+  BrandInfo,
+  ChainConnection,
+} from 'store/app';
+import type { Amount } from '@agoric/ertp/src/types';
+
+type Ratio = ReturnType<typeof makeRatio>;
 
 type GovernedParamsData = {
   current: {
@@ -157,5 +165,16 @@ export const watchPurses = async (
 
       mergeBrandToInfo([[brand, newInfo]]);
     }
+  }
+};
+
+export const watchSmartWalletProvision = async (
+  chainConnection: ChainConnection,
+  setSmartWalletProvisioned: (isProvisioned: boolean) => void
+) => {
+  const n = chainConnection.smartWalletStatusNotifier;
+  for await (const status of iterateNotifier(n)) {
+    console.log('Provision status', status);
+    setSmartWalletProvisioned(status?.provisioned);
   }
 };

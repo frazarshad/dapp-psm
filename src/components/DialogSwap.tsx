@@ -2,11 +2,8 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { AnimatePresence, motion } from 'framer-motion';
 import { FiX, FiExternalLink } from 'react-icons/fi';
-
 import AssetDialog from 'components/AssetDialog';
-
-// Ambient
-import '@agoric/ertp/src/types';
+import type { Brand } from '@agoric/ertp/src/types';
 
 const DialogSwap = ({
   open,

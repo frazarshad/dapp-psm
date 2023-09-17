@@ -1,24 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiRepeat, FiHelpCircle } from 'react-icons/fi';
 import clsx from 'clsx';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-
-import AnimatedCheckIcon from './AnimatedCheckIcon';
 import SectionSwap, { SectionSwapType } from 'components/SectionSwap';
 import ContractInfo from 'components/ContractInfo';
 import CustomLoader from 'components/CustomLoader';
 import {
   brandToInfoAtom,
-  walletAtom,
   governedParamsIndexAtom,
   metricsIndexAtom,
   instanceIdsAtom,
   chainConnectionAtom,
-  bridgeApprovedAtom,
-  walletUiHrefAtom,
+  smartWalletProvisionedAtom,
+  provisionToastIdAtom,
 } from 'store/app';
-import { instanceIdAtom } from 'store/swap';
+import { clearAmountInputsAtom, instanceAtom } from 'store/swap';
 import {
   governedParamsAtom,
   metricsAtom,
@@ -34,12 +31,11 @@ import {
   errorsAtom,
 } from 'store/swap';
 import { makeSwapOffer } from 'services/swap';
-import { toast } from 'react-toastify';
+import { provisionSmartWallet } from 'services/wallet';
 
 const Swap = () => {
-  const [swapped, setSwapped] = useState(false);
-  const bridgeApproved = useAtomValue(bridgeApprovedAtom);
   const chainConnection = useAtomValue(chainConnectionAtom);
+  const isSmartWalletProvisioned = useAtomValue(smartWalletProvisionedAtom);
   const brandToInfo = useAtomValue(brandToInfoAtom);
   const metricsIndex = useAtomValue(metricsIndexAtom);
   const governedParamsIndex = useAtomValue(governedParamsIndexAtom);
@@ -49,15 +45,15 @@ const Swap = () => {
   const errors = useAtomValue(errorsAtom);
   const addError = useSetAtom(addErrorAtom);
   const removeError = useSetAtom(removeErrorAtom);
-  const instanceId = useAtomValue(instanceIdAtom);
-  const wallet = useAtomValue(walletAtom);
+  const instance = useAtomValue(instanceAtom);
+  const clearAmountInputs = useSetAtom(clearAmountInputsAtom);
   const fromPurse = useAtomValue(fromPurseAtom);
   const toPurse = useAtomValue(toPurseAtom);
   const instanceIds = useAtomValue(instanceIdsAtom);
-  const walletUiHref = useAtomValue(walletUiHrefAtom);
   const { mintLimit } = useAtomValue(governedParamsAtom) ?? {};
   const { anchorPoolBalance, mintedPoolBalance } =
     useAtomValue(metricsAtom) ?? {};
+  const setProvisionToastId = useSetAtom(provisionToastIdAtom);
 
   const anchorPetnames = [...instanceIds.keys()];
   const areAnchorsLoaded =
@@ -78,13 +74,18 @@ const Swap = () => {
     }
   }, [swapDirection, setSwapDirection]);
 
+  const provision = () => {
+    assert(chainConnection);
+    provisionSmartWallet(chainConnection, setProvisionToastId);
+  };
+
   const handleSwap = useCallback(async () => {
-    if (!areAnchorsLoaded || !bridgeApproved || !wallet || swapped) return;
+    if (!areAnchorsLoaded || !chainConnection) return;
 
     const fromValue = fromAmount?.value;
     const toValue = toAmount?.value;
 
-    if (!(fromPurse && toPurse && instanceId)) {
+    if (!(fromPurse && toPurse && instance)) {
       addError(SwapError.NO_BRANDS);
       return;
     }
@@ -121,70 +122,28 @@ const Swap = () => {
         return;
       }
     }
-
-    try {
-      await makeSwapOffer({
-        instanceId,
-        wallet,
-        fromPurse,
-        fromValue,
-        toPurse,
-        toValue,
-        swapDirection,
-        marshal: chainConnection.unserializer,
-      });
-      setSwapped(true);
-      setTimeout(() => {
-        setSwapped(false);
-      }, 3000);
-      toast.success(
-        <p>
-          Swap offer sent to{' '}
-          <a
-            className="underline text-blue-500"
-            href={walletUiHref}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {walletUiHref}
-          </a>{' '}
-          for approval.
-        </p>,
-        { hideProgressBar: false, autoClose: 5000 }
-      );
-    } catch (e) {
-      toast.error(
-        <p>
-          A problem occurred when sending the swap offer to{' '}
-          <a
-            className="underline text-blue-500"
-            href={walletUiHref}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {walletUiHref}
-          </a>
-          .
-        </p>
-      );
-    }
+    makeSwapOffer({
+      instance,
+      fromPurse,
+      fromValue,
+      toPurse,
+      toValue,
+      swapDirection,
+      chainConnection,
+    });
   }, [
     areAnchorsLoaded,
-    bridgeApproved,
-    wallet,
-    swapped,
     fromAmount?.value,
     toAmount?.value,
     fromPurse,
     toPurse,
-    instanceId,
+    instance,
     swapDirection,
     addError,
     mintLimit,
     mintedPoolBalance,
     anchorPoolBalance,
-    chainConnection?.unserializer,
-    walletUiHref,
+    chainConnection,
   ]);
 
   useEffect(() => {
@@ -200,7 +159,11 @@ const Swap = () => {
     removeError(SwapError.PURSE_BALANCE);
     removeError(SwapError.MINT_LIMIT);
     removeError(SwapError.ANCHOR_LIMIT);
-  }, [toPurse, fromPurse, removeError]);
+  }, [swapDirection, instance, removeError]);
+
+  useEffect(() => {
+    clearAmountInputs();
+  }, [instance, clearAmountInputs]);
 
   const errorsToRender: JSX.Element[] = [];
   errors.forEach(e => {
@@ -255,7 +218,7 @@ const Swap = () => {
           </a>
         </span>
       </motion.div>
-      {chainConnection ? (
+      {chainConnection && isSmartWalletProvisioned !== undefined ? (
         form
       ) : (
         <CustomLoader text="Connect Keplr to continue" />
@@ -264,16 +227,20 @@ const Swap = () => {
       <motion.button
         className={clsx(
           'flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-xl font-medium p-3 uppercase',
-          areAnchorsLoaded && bridgeApproved
+          areAnchorsLoaded
             ? 'bg-primary hover:bg-primaryDark text-white'
             : 'text-gray-500 cursor-not-allowed'
         )}
-        onClick={handleSwap}
+        disabled={isSmartWalletProvisioned === undefined}
+        onClick={isSmartWalletProvisioned === false ? provision : handleSwap}
       >
         <motion.div className="relative flex flex-row w-full justify-center items-center">
           <div className="w-6" />
-          <div className="text-white w-fit">Create Swap Offer</div>
-          <AnimatedCheckIcon isVisible={swapped} />
+          <div className="text-white w-fit">
+            {isSmartWalletProvisioned === false
+              ? 'Provision Smart Wallet'
+              : 'Swap'}
+          </div>
         </motion.div>
       </motion.button>
       {errorsToRender}

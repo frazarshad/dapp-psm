@@ -1,12 +1,9 @@
 import { useAtomValue } from 'jotai';
-
 import AssetListItem from 'components/AssetListItem';
 import ListItem from 'components/ListItem';
 import SkeletonListItem from 'components/SkeletonListItem';
 import { displayFunctionsAtom } from 'store/app';
-
-// Ambient
-import '@agoric/ertp/src/types.js';
+import type { Brand } from '@agoric/ertp/src/types';
 
 const AssetDialog = ({
   brands,

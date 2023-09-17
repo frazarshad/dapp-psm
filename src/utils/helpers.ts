@@ -8,10 +8,10 @@ import {
   ceilDivideBy,
   ceilMultiplyBy,
 } from '@agoric/zoe/src/contractSupport';
+import { makeRatio } from '@agoric/zoe/src/contractSupport/ratio';
+import type { Brand, Amount } from '@agoric/ertp/src/types';
 
-// Ambient
-import '@agoric/ertp/src/types';
-import '@agoric/zoe/src/contractSupport/types';
+type Ratio = ReturnType<typeof makeRatio>;
 
 export const getPurseAssetKind = (purse: PursesJSONState) =>
   (purse && purse.displayInfo && purse.displayInfo.assetKind) || undefined;

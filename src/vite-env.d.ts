@@ -1,16 +1,5 @@
 /// <reference types="vite/client" />
 
-declare module '@agoric/web-components' {
-  export const makeAgoricWalletConnection;
-  export const AgoricKeplrConnectionErrors;
-  export const BridgeProtocol;
-}
-
-declare module '@agoric/web-components/react' {
-  export const makeReactAgoricWalletConnection;
-  export const makeReactDappWalletBridge;
-}
-
 declare module '@agoric/notifier' {
   export const makeAsyncIterableFromNotifier;
 }
@@ -44,4 +33,9 @@ declare module '@agoric/ui-components' {
 
 declare module '@endo/lockdown' {
   export const lockdown;
+}
+
+declare module '@agoric/cosmic-proto/swingset/query.js' {
+  export const QueryClientImpl;
+  export const QueryParamsResponse;
 }
