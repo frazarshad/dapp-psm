@@ -30,7 +30,7 @@ import TermsDialog, { currentTermsIndex } from './TermsDialog';
 import clsx from 'clsx';
 import { makeAgoricChainStorageWatcher } from '@agoric/rpc';
 import { sample } from 'lodash-es';
-import { loadNetworkConfig } from 'utils/networkConfig';
+import { activeNotices, loadNetworkConfig } from 'utils/networkConfig';
 import ProvisionSmartWalletDialog from './ProvisionSmartWalletDialog';
 
 import 'react-toastify/dist/ReactToastify.css';
@@ -173,14 +173,13 @@ const ChainConnection = () => {
     let connection;
     setConnectionInProgress(true);
     try {
-      const { rpcAddrs, chainName } = await loadNetworkConfig(
-        networkConfig.url
-      );
-      const rpc = sample(rpcAddrs);
+      const config = await loadNetworkConfig(networkConfig.url);
+      const rpc = sample(config.rpcAddrs);
       if (!rpc) {
         throw new Error(Errors.networkConfig);
       }
-      const watcher = makeAgoricChainStorageWatcher(rpc, chainName, e => {
+      const chainId = config.chainName;
+      const watcher = makeAgoricChainStorageWatcher(rpc, chainId, e => {
         console.error(e);
         throw e;
       });
@@ -188,8 +187,11 @@ const ChainConnection = () => {
       setChainConnection({
         ...connection,
         watcher,
-        chainId: chainName,
+        chainId,
       });
+      for (const message of activeNotices(config)) {
+        toast.warn(message, { position: 'top-center' });
+      }
     } catch (e: any) {
       switch (e.message) {
         case Errors.enableKeplr:
