@@ -6,7 +6,7 @@ type NetworkNotice = {
   message: string;
 };
 
-type MinimalNetworkConfig = {
+export type MinimalNetworkConfig = {
   rpcAddrs: string[];
   chainName: string;
   notices?: NetworkNotice[];
