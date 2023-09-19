@@ -14,11 +14,11 @@ import {
   governedParamsIndexAtom,
   metricsIndexAtom,
   chainConnectionAtom,
-  networkConfigAtom,
   termsIndexAgreedUponAtom,
   smartWalletProvisionedAtom,
   provisionToastIdAtom,
   ChainConnection as ChainConnectionStore,
+  networkConfigPAtom,
 } from 'store/app';
 import {
   watchContract,
@@ -30,12 +30,12 @@ import TermsDialog, { currentTermsIndex } from './TermsDialog';
 import clsx from 'clsx';
 import { makeAgoricChainStorageWatcher } from '@agoric/rpc';
 import { sample } from 'lodash-es';
-import { loadNetworkConfig } from 'utils/networkConfig';
 import ProvisionSmartWalletDialog from './ProvisionSmartWalletDialog';
+import { querySwingsetParams } from 'utils/swingsetParams';
 
 import 'react-toastify/dist/ReactToastify.css';
 import 'styles/globals.css';
-import { querySwingsetParams } from 'utils/swingsetParams';
+import { loadable } from 'jotai/utils';
 
 const autoCloseDelayMs = 7000;
 
@@ -81,13 +81,12 @@ const ChainConnection = () => {
   const [isSmartWalletProvisioned, setSmartWalletProvisioned] = useAtom(
     smartWalletProvisionedAtom
   );
-  const networkConfig = useAtomValue(networkConfigAtom);
   const termsAgreed = useAtomValue(termsIndexAgreedUponAtom);
   const [isTermsDialogOpen, setIsTermsDialogOpen] = useState(false);
   const [isProvisionDialogOpen, setIsProvisionDialogOpen] = useState(false);
   const { smartWalletFee, error: smartWalletFeeError } =
     useSmartWalletFeeQuery(chainConnection);
-
+  const networkConfig = useAtomValue(loadable(networkConfigPAtom));
   const areLatestTermsAgreed = termsAgreed === currentTermsIndex;
 
   const handleTermsDialogClose = () => {
@@ -169,46 +168,58 @@ const ChainConnection = () => {
       setIsTermsDialogOpen(true);
       return;
     }
-
-    let connection;
     setConnectionInProgress(true);
-    try {
-      const { rpcAddrs, chainName } = await loadNetworkConfig(
-        networkConfig.url
-      );
-      const rpc = sample(rpcAddrs);
-      if (!rpc) {
-        throw new Error(Errors.networkConfig);
-      }
-      const watcher = makeAgoricChainStorageWatcher(rpc, chainName, e => {
-        console.error(e);
-        throw e;
-      });
-      connection = await makeAgoricWalletConnection(watcher);
-      setChainConnection({
-        ...connection,
-        watcher,
-        chainId: chainName,
-      });
-    } catch (e: any) {
-      switch (e.message) {
-        case Errors.enableKeplr:
-          toast.error('Enable the connection in Keplr to continue.', {
-            hideProgressBar: false,
-            autoClose: autoCloseDelayMs,
-          });
-          break;
-        case Errors.networkConfig:
-          toast.error('Network not found.');
-          break;
-        default:
-          toast.error('Error connecting to network:' + e.message);
-          break;
-      }
-    } finally {
-      setConnectionInProgress(false);
-    }
   };
+
+  useEffect(() => {
+    const connect = async () => {
+      if (networkConfig.state === 'loading') {
+        return;
+      }
+      try {
+        if (networkConfig.state === 'hasError') {
+          throw new Error(Errors.networkConfig);
+        }
+        const config = networkConfig.data;
+        const rpc = sample(config.rpcAddrs);
+        if (!rpc) {
+          throw new Error(Errors.networkConfig);
+        }
+        const chainId = config.chainName;
+        const watcher = makeAgoricChainStorageWatcher(rpc, chainId, e => {
+          console.error(e);
+          throw e;
+        });
+        const connection = await makeAgoricWalletConnection(watcher);
+        setChainConnection({
+          ...connection,
+          watcher,
+          chainId,
+        });
+      } catch (e: any) {
+        switch (e.message) {
+          case Errors.enableKeplr:
+            toast.error('Enable the connection in Keplr to continue.', {
+              hideProgressBar: false,
+              autoClose: autoCloseDelayMs,
+            });
+            break;
+          case Errors.networkConfig:
+            toast.error('Network not found.');
+            break;
+          default:
+            toast.error('Error connecting to network:' + e.message);
+            break;
+        }
+      } finally {
+        setConnectionInProgress(false);
+      }
+    };
+
+    if (connectionInProgress) {
+      connect();
+    }
+  }, [connectionInProgress, networkConfig, setChainConnection]);
 
   const status = (() => {
     if (connectionInProgress) {

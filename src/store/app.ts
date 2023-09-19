@@ -9,6 +9,7 @@ import { makeAgoricWalletConnection } from '@agoric/web-components';
 import type { Brand, DisplayInfo, Amount } from '@agoric/ertp/src/types';
 import type { Id as ToastId } from 'react-toastify';
 import { ChainStorageWatcher } from '@agoric/rpc';
+import { loadNetworkConfig } from 'utils/networkConfig';
 
 type Ratio = ReturnType<typeof makeRatio>;
 
@@ -19,11 +20,6 @@ export type ChainConnection = Awaited<
 export type BrandInfo = DisplayInfo<'nat'> & {
   petname: string;
 };
-
-export const bannerIndexDismissedAtom = atomWithStorage(
-  'banner-index-dismissed',
-  -1
-);
 
 export const brandToInfoAtom = mapAtom<Brand, BrandInfo>();
 
@@ -36,6 +32,10 @@ export const pursesAtom = atom<Array<PursesJSONState> | null>(null);
 export const networkConfigAtom = atomWithStorage(
   'agoric-network-config',
   networkConfigs.mainnet
+);
+
+export const networkConfigPAtom = atom(async get =>
+  loadNetworkConfig(get(networkConfigAtom).url)
 );
 
 export const termsIndexAgreedUponAtom = atomWithStorage('terms-agreed', -1);
