@@ -4,33 +4,40 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { FiX, FiExternalLink } from 'react-icons/fi';
 import AssetDialog from 'components/AssetDialog';
 import type { Brand } from '@agoric/ertp/src/types';
+import { useAtom, useAtomValue } from 'jotai';
+import {
+  assetSelectionDialogOpenAtom,
+  selectedAnchorPetnameAtom,
+} from 'store/swap';
+import { displayFunctionsAtom } from 'store/app';
 
-const DialogSwap = ({
-  open,
-  handleClose,
-  brands,
-  selectedBrand,
-  handleBrandSelected,
-}: {
-  open: boolean;
-  handleClose: () => void;
-  brands: Array<Brand>;
-  handleBrandSelected: (brand: Brand | null) => void;
-  selectedBrand?: Brand | null;
-  purseOnly?: boolean;
-}) => {
+const DialogSwap = () => {
+  const { displayBrandPetname } = useAtomValue(displayFunctionsAtom);
+  const [selectedAnchorBrandPetname, setSelectedAnchorBrandPetname] = useAtom(
+    selectedAnchorPetnameAtom
+  );
+  const [assetSelectionDialogOpen, setAssetSelectionDialogOpen] = useAtom(
+    assetSelectionDialogOpenAtom
+  );
+
+  const handleBrandSelected = (brand: Brand | null) => {
+    setSelectedAnchorBrandPetname(displayBrandPetname(brand));
+    setAssetSelectionDialogOpen(false);
+  };
+  const close = () => setAssetSelectionDialogOpen(false);
+
   return (
     <AnimatePresence>
-      {open && (
+      {assetSelectionDialogOpen && (
         <motion.div
-          key={selectedBrand ? 'purseDialog' : 'assetDialog'}
+          key={selectedAnchorBrandPetname ? 'purseDialog' : 'assetDialog'}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
           className="fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-10 flex items-center justify-center px-4 py-6 z-50"
         >
-          <div className="absolute w-full h-full " onClick={handleClose} />
+          <div className="absolute w-full h-full" onClick={close} />
           <motion.div
             className="bg-white flex flex-col w-full max-w-md rounded-sm max-h-full  z-50"
             initial={{ scale: 0 }}
@@ -51,15 +58,12 @@ const DialogSwap = ({
               </div>
               <button
                 className="text-2xl hover:bg-gray-100 p-1 rounded-sm cursor-pointer"
-                onClick={handleClose}
+                onClick={close}
               >
                 <FiX />
               </button>
             </div>
-            <AssetDialog
-              handleBrandSelected={handleBrandSelected}
-              brands={brands}
-            />
+            <AssetDialog handleBrandSelected={handleBrandSelected} />
           </motion.div>
         </motion.div>
       )}
