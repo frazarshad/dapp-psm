@@ -32,6 +32,8 @@ export enum SwapDirection {
 
 export const selectedAnchorPetnameAtom = atom<string | null>(null);
 
+export const assetSelectionDialogOpenAtom = atom(false);
+
 export const anchorBrandAtom = atom(
   get => get(metricsAtom)?.anchorPoolBalance?.brand
 );

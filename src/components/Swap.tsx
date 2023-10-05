@@ -32,6 +32,7 @@ import {
 } from 'store/swap';
 import { makeSwapOffer } from 'services/swap';
 import { provisionSmartWallet } from 'services/wallet';
+import DialogSwap from './DialogSwap';
 
 const Swap = () => {
   const chainConnection = useAtomValue(chainConnectionAtom);
@@ -197,54 +198,57 @@ const Swap = () => {
   );
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, boxShadow: 'none' }}
-      animate={{
-        opacity: 1,
-        boxShadow: '0px 0px 99px var(--color-glow)',
-      }}
-      transition={{ duration: 0.4 }}
-      className="h-fit flex flex-col p-4 rounded-sm gap-4 w-screen max-w-lg relative select-none overflow-hidden"
-    >
-      <motion.div className="flex justify-between items-center gap-8 " layout>
-        <h1 className="text-2xl font-semibold text-slate-800">IST Swap</h1>
-        <span className="text-2xl text-blue-500 hover:text-blue-700">
-          <a
-            href="https://docs.inter.trade/user-how-to/minting-ist/mainnet-minting-ist-using-the-psm"
-            target="psm_guide"
-          >
-            <FiHelpCircle />
-          </a>
-        </span>
-      </motion.div>
-      {chainConnection && isSmartWalletProvisioned !== undefined ? (
-        form
-      ) : (
-        <CustomLoader text="Connect Keplr to continue" />
-      )}
-      <ContractInfo />
-      <motion.button
-        className={clsx(
-          'flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-xl font-medium p-3 uppercase',
-          areAnchorsLoaded
-            ? 'bg-primary hover:bg-primaryDark text-white'
-            : 'text-gray-500 cursor-not-allowed'
-        )}
-        disabled={isSmartWalletProvisioned === undefined}
-        onClick={isSmartWalletProvisioned === false ? provision : handleSwap}
+    <>
+      <motion.div
+        layout
+        initial={{ opacity: 0, boxShadow: 'none' }}
+        animate={{
+          opacity: 1,
+          boxShadow: '0px 0px 99px var(--color-glow)',
+        }}
+        transition={{ duration: 0.4 }}
+        className="h-fit flex flex-col p-4 rounded-sm gap-4 w-screen max-w-lg relative select-none overflow-hidden"
       >
-        <motion.div className="relative flex flex-row w-full justify-center items-center">
-          <div className="w-6" />
-          <div className="text-white w-fit">
-            {isSmartWalletProvisioned === false
-              ? 'Provision Smart Wallet'
-              : 'Swap'}
-          </div>
+        <motion.div className="flex justify-between items-center gap-8 " layout>
+          <h1 className="text-2xl font-semibold text-slate-800">IST Swap</h1>
+          <span className="text-2xl text-blue-500 hover:text-blue-700">
+            <a
+              href="https://docs.inter.trade/user-how-to/minting-ist/mainnet-minting-ist-using-the-psm"
+              target="psm_guide"
+            >
+              <FiHelpCircle />
+            </a>
+          </span>
         </motion.div>
-      </motion.button>
-      {errorsToRender}
-    </motion.div>
+        {chainConnection && isSmartWalletProvisioned !== undefined ? (
+          form
+        ) : (
+          <CustomLoader text="Connect Keplr to continue" />
+        )}
+        <ContractInfo />
+        <motion.button
+          className={clsx(
+            'flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-xl font-medium p-3 uppercase',
+            areAnchorsLoaded
+              ? 'bg-primary hover:bg-primaryDark text-white'
+              : 'text-gray-500 cursor-not-allowed'
+          )}
+          disabled={isSmartWalletProvisioned === undefined}
+          onClick={isSmartWalletProvisioned === false ? provision : handleSwap}
+        >
+          <motion.div className="relative flex flex-row w-full justify-center items-center">
+            <div className="w-6" />
+            <div className="text-white w-fit">
+              {isSmartWalletProvisioned === false
+                ? 'Provision Smart Wallet'
+                : 'Swap'}
+            </div>
+          </motion.div>
+        </motion.button>
+        {errorsToRender}
+      </motion.div>
+      <DialogSwap />
+    </>
   );
 };
 

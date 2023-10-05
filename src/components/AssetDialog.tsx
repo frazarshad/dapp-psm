@@ -4,14 +4,14 @@ import ListItem from 'components/ListItem';
 import SkeletonListItem from 'components/SkeletonListItem';
 import { displayFunctionsAtom } from 'store/app';
 import type { Brand } from '@agoric/ertp/src/types';
+import { anchorBrandsAtom } from 'store/swap';
 
 const AssetDialog = ({
-  brands,
   handleBrandSelected,
 }: {
-  brands: Array<Brand>;
   handleBrandSelected: (brand: Brand) => void;
 }) => {
+  const brands = useAtomValue(anchorBrandsAtom);
   const { displayBrandPetname } = useAtomValue(displayFunctionsAtom);
   const brandSections =
     brands && brands.length
