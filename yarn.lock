@@ -225,12 +225,12 @@
     "@endo/marshal" "^0.8.5"
     "@endo/promise-kit" "^0.2.56"
 
-"@agoric/rpc@^0.6.0":
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/@agoric/rpc/-/rpc-0.6.0.tgz#67a7a67a7053640fc942edf25834db53b8eeb5dd"
-  integrity sha512-gachE+oO5Iz9q8my9PWmiO1u38Lfsk/327OwuE/W8+4MoWcggtKXofQHLPoXRAE7ZYE6lz/ExW+fNm9TOBpoUA==
+"@agoric/rpc@^0.7.2":
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/@agoric/rpc/-/rpc-0.7.2.tgz#6aff2222a257a7cfc444304a1d23002f88b34b5c"
+  integrity sha512-U0KpMj4olVmMjWQdABi8MGnfw8LYjIAcbeKXl1HUaRn3kU5ow7oQDWvtE+e5/j7zwZi+4aVDJbUrmyypaLSCjQ==
   dependencies:
-    "@endo/marshal" "^0.8.8"
+    "@endo/marshal" "^0.8.9"
     vite "^4.3.2"
     vite-tsconfig-paths "^4.2.0"
 
@@ -539,10 +539,10 @@
     eslint-plugin-eslint-comments "^3.1.2"
     import-meta-resolve "^2.2.1"
 
-"@agoric/web-components@0.12.1-dev-74299fa.0":
-  version "0.12.1-dev-74299fa.0"
-  resolved "https://registry.yarnpkg.com/@agoric/web-components/-/web-components-0.12.1-dev-74299fa.0.tgz#c076a6d05ab5e0935a8d390359ff2e590b23284f"
-  integrity sha512-ff6FjbGhY4KAHLOkqWNSmrTGoAHCikeNiNXe2PzzWds5VWEviLH8utRJxe9yZiXXCNZLHbLx2Rsk1kzlFJ6GGw==
+"@agoric/web-components@^0.13.2":
+  version "0.13.2"
+  resolved "https://registry.yarnpkg.com/@agoric/web-components/-/web-components-0.13.2.tgz#5bb6c43892269a2852371216cb19f7179652fb64"
+  integrity sha512-2Vd6t72lNkJv8Yv6EJFid77YpNgBicFR8AqsKu25Y4puBu9j+RqpkUFuPVjmzpecsCLQmWi1GUSDRNJE4HVPNQ==
   dependencies:
     "@agoric/assert" "^0.6.0"
     "@agoric/cache" "^0.3.2"
@@ -1275,7 +1275,7 @@
   dependencies:
     ses "^0.18.8"
 
-"@endo/marshal@^0.8.5", "@endo/marshal@^0.8.6", "@endo/marshal@^0.8.8", "@endo/marshal@^0.8.9":
+"@endo/marshal@^0.8.5", "@endo/marshal@^0.8.6", "@endo/marshal@^0.8.9":
   version "0.8.9"
   resolved "https://registry.yarnpkg.com/@endo/marshal/-/marshal-0.8.9.tgz#f6fcaf23ecad828f6d086657f1d1590ea8ef3840"
   integrity sha512-wzYlY5/JFzY/wAVxZ6h0BxlRaAS/9KKnhircKO/tGw5bZYHFvLeSeMCBZ4VCSZg5aNgDlhuvB0S6iCwS5MYqcg==
@@ -3321,7 +3321,7 @@ eslint@^8.22.0:
     strip-ansi "^6.0.1"
     text-table "^0.2.0"
 
-"esm@github:agoric-labs/esm#Agoric-built":
+esm@agoric-labs/esm#Agoric-built:
   version "3.2.25"
   resolved "https://codeload.github.com/agoric-labs/esm/tar.gz/3603726ad4636b2f865f463188fcaade6375638e"
 
