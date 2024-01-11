@@ -8,6 +8,8 @@ import { INTER_LOGO } from 'assets/assets';
 import { MdBarChart } from 'react-icons/md';
 import { FiExternalLink } from 'react-icons/fi';
 import NoticeBanner from 'components/NoticeBanner';
+import ChainConnectionErrorDialog from 'components/ChainConnectionErrorDialog';
+import NodeSelectorDialog from 'components/NodeSelectorDialog';
 
 import 'styles/globals.css';
 
@@ -53,6 +55,8 @@ const App = () => {
           </a>
         </motion.div>
       </motion.div>
+      <ChainConnectionErrorDialog />
+      <NodeSelectorDialog />
     </>
   );
 };

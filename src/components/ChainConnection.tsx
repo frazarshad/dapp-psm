@@ -17,8 +17,12 @@ import {
   termsIndexAgreedUponAtom,
   smartWalletProvisionedAtom,
   provisionToastIdAtom,
-  ChainConnection as ChainConnectionStore,
   networkConfigPAtom,
+  rpcNodeAtom,
+  apiNodeAtom,
+  chainConnectionErrorAtom,
+  savedApiNodeAtom,
+  savedRpcNodeAtom,
 } from 'store/app';
 import {
   watchContract,
@@ -32,26 +36,29 @@ import { makeAgoricChainStorageWatcher } from '@agoric/rpc';
 import { sample } from 'lodash-es';
 import ProvisionSmartWalletDialog from './ProvisionSmartWalletDialog';
 import { querySwingsetParams } from 'utils/swingsetParams';
+import { loadable } from 'jotai/utils';
 
 import 'react-toastify/dist/ReactToastify.css';
 import 'styles/globals.css';
-import { loadable } from 'jotai/utils';
+import SettingsButton from './SettingsButton';
 
 const autoCloseDelayMs = 7000;
 
-const useSmartWalletFeeQuery = (
-  chainConnection: ChainConnectionStore | null
-) => {
+const useSmartWalletFeeQuery = () => {
   const [smartWalletFee, setFee] = useState<bigint | null>(null);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
+  const networkConfig = useAtomValue(loadable(networkConfigPAtom));
 
   useEffect(() => {
-    const fetchParams = async () => {
-      assert(chainConnection);
+    if (networkConfig.state === 'loading') {
+      return;
+    }
+    if (networkConfig.state === 'hasError') {
+      setError(networkConfig.error);
+    }
+    const fetchParams = async (rpc: string) => {
       try {
-        const params = await querySwingsetParams(
-          chainConnection.watcher.rpcAddr
-        );
+        const params = await querySwingsetParams(rpc);
         console.debug('swingset params', params);
         setFee(BigInt(params.params.powerFlagFees[0].fee[0].amount));
       } catch (e: any) {
@@ -59,10 +66,15 @@ const useSmartWalletFeeQuery = (
       }
     };
 
-    if (chainConnection) {
-      fetchParams();
+    if (networkConfig.state === 'hasData') {
+      const rpc = sample(networkConfig.data.rpcAddrs);
+      if (!rpc) {
+        setError('No RPC available in network config');
+      } else {
+        fetchParams(rpc);
+      }
     }
-  }, [chainConnection]);
+  }, [networkConfig]);
 
   return { smartWalletFee, error };
 };
@@ -85,8 +97,14 @@ const ChainConnection = () => {
   const [isTermsDialogOpen, setIsTermsDialogOpen] = useState(false);
   const [isProvisionDialogOpen, setIsProvisionDialogOpen] = useState(false);
   const { smartWalletFee, error: smartWalletFeeError } =
-    useSmartWalletFeeQuery(chainConnection);
+    useSmartWalletFeeQuery();
   const networkConfig = useAtomValue(loadable(networkConfigPAtom));
+  const setRpcNode = useSetAtom(rpcNodeAtom);
+  const setApiNode = useSetAtom(apiNodeAtom);
+  const setChainConnectionError = useSetAtom(chainConnectionErrorAtom);
+  const savedApi = useAtomValue(savedApiNodeAtom);
+  const savedRpc = useAtomValue(savedRpcNodeAtom);
+
   const areLatestTermsAgreed = termsAgreed === currentTermsIndex;
 
   const handleTermsDialogClose = () => {
@@ -138,18 +156,11 @@ const ChainConnection = () => {
       (err: Error) => console.error('got watchPurses err', err)
     );
 
-    watchContract(
-      chainConnection.watcher,
-      {
-        setMetricsIndex,
-        setGovernedParamsIndex,
-        setInstanceIds,
-      },
-      () =>
-        toast.error(
-          'Error reading contract data from chain. See debug console for more info.'
-        )
-    );
+    watchContract(chainConnection.watcher, {
+      setMetricsIndex,
+      setGovernedParamsIndex,
+      setInstanceIds,
+    });
   }, [
     chainConnection,
     mergeBrandToInfo,
@@ -180,17 +191,22 @@ const ChainConnection = () => {
         if (networkConfig.state === 'hasError') {
           throw new Error(Errors.networkConfig);
         }
+
         const config = networkConfig.data;
-        const rpc = sample(config.rpcAddrs);
-        if (!rpc) {
+        const rpc = savedRpc || sample(config.rpcAddrs);
+        const api = savedApi || sample(config.apiAddrs);
+        const chainId = config.chainName;
+
+        if (!rpc || !api || !chainId) {
           throw new Error(Errors.networkConfig);
         }
-        const chainId = config.chainName;
-        const watcher = makeAgoricChainStorageWatcher(rpc, chainId, e => {
+        setRpcNode(rpc);
+        setApiNode(api);
+        const watcher = makeAgoricChainStorageWatcher(api, chainId, e => {
           console.error(e);
-          throw e;
+          setChainConnectionError(e);
         });
-        const connection = await makeAgoricWalletConnection(watcher);
+        const connection = await makeAgoricWalletConnection(watcher, rpc);
         setChainConnection({
           ...connection,
           watcher,
@@ -208,7 +224,7 @@ const ChainConnection = () => {
             toast.error('Network not found.');
             break;
           default:
-            toast.error('Error connecting to network:' + e.message);
+            setChainConnectionError(e);
             break;
         }
       } finally {
@@ -219,7 +235,16 @@ const ChainConnection = () => {
     if (connectionInProgress) {
       connect();
     }
-  }, [connectionInProgress, networkConfig, setChainConnection]);
+  }, [
+    connectionInProgress,
+    networkConfig,
+    savedApi,
+    savedRpc,
+    setApiNode,
+    setChainConnection,
+    setChainConnectionError,
+    setRpcNode,
+  ]);
 
   const status = (() => {
     if (connectionInProgress) {
@@ -232,6 +257,7 @@ const ChainConnection = () => {
 
   return (
     <div className="flex flex-row space-x-2">
+      <SettingsButton />
       <div className="flex flex-row align-middle">
         <NetworkDropdown />
       </div>

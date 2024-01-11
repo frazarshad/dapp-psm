@@ -27,8 +27,7 @@ type GovernedParamsData = {
 const watchGovernance = async (
   watcher: ChainStorageWatcher,
   setGovernedParamsIndex: ContractSetters['setGovernedParamsIndex'],
-  anchorPetname: string,
-  onErr: (err: string) => void
+  anchorPetname: string
 ) => {
   // E.g. 'published.psm.IST.AUSD.governance'
   const spec = dappConfig.INSTANCE_PREFIX + anchorPetname + '.governance';
@@ -44,16 +43,14 @@ const watchGovernance = async (
       setGovernedParamsIndex([
         [anchorPetname, { giveMintedFee, mintLimit, wantMintedFee }],
       ]);
-    },
-    onErr
+    }
   );
 };
 
 const watchMetrics = async (
   watcher: ChainStorageWatcher,
   setMetricsIndex: ContractSetters['setMetricsIndex'],
-  anchorPetname: string,
-  onErr: (err: string) => void
+  anchorPetname: string
 ) => {
   // E.g. 'published.psm.IST.AUSD.metrics'
   const spec = dappConfig.INSTANCE_PREFIX + anchorPetname + '.metrics';
@@ -63,15 +60,13 @@ const watchMetrics = async (
     value => {
       console.debug('got metrics', value);
       setMetricsIndex([[anchorPetname, value]]);
-    },
-    onErr
+    }
   );
 };
 
 const watchInstanceIds = async (
   watcher: ChainStorageWatcher,
-  setters: ContractSetters,
-  onErr: (err: string) => void
+  setters: ContractSetters
 ) => {
   const watchedAnchors = new Set();
 
@@ -97,30 +92,15 @@ const watchInstanceIds = async (
         if (!watchedAnchors.has(anchorPetname)) {
           watchedAnchors.add(anchorPetname);
 
-          watchMetrics(watcher, setters.setMetricsIndex, anchorPetname, err => {
-            console.error('Error watching metrics for', anchorPetname, err);
-            onErr(err);
-          });
+          watchMetrics(watcher, setters.setMetricsIndex, anchorPetname);
 
           watchGovernance(
             watcher,
             setters.setGovernedParamsIndex,
-            anchorPetname,
-            err => {
-              console.error(
-                'Error watching governance for',
-                anchorPetname,
-                err
-              );
-              onErr(err);
-            }
+            anchorPetname
           );
         }
       });
-    },
-    err => {
-      console.error('Error watching instance ids', err);
-      onErr(err);
     }
   );
 };
@@ -133,10 +113,9 @@ declare type ContractSetters = {
 
 export const watchContract = async (
   watcher: ChainStorageWatcher,
-  setters: ContractSetters,
-  onErr: (err: string) => void
+  setters: ContractSetters
 ) => {
-  watchInstanceIds(watcher, setters, onErr);
+  watchInstanceIds(watcher, setters);
 };
 
 export const watchPurses = async (

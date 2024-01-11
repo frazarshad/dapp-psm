@@ -8,6 +8,7 @@ type NetworkNotice = {
 
 export type MinimalNetworkConfig = {
   rpcAddrs: string[];
+  apiAddrs: string[];
   chainName: string;
   notices?: NetworkNotice[];
 };

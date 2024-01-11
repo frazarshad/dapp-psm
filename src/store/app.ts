@@ -74,3 +74,32 @@ export const previewEnabledAtom = atom(_get => false);
 export const provisionToastIdAtom = atom<ToastId | undefined>(undefined);
 
 export const smartWalletProvisionedAtom = atom<boolean | undefined>(undefined);
+
+export const chainConnectionErrorInternalAtom = atom<Error | null>(null);
+
+export const chainConnectionErrorAtom = atom(
+  get => get(chainConnectionErrorInternalAtom),
+  (get, set, error: Error) => {
+    if (get(chainConnectionErrorInternalAtom) === null) {
+      set(chainConnectionErrorInternalAtom, error);
+    }
+  }
+);
+
+// Currently used rpc node.
+export const rpcNodeAtom = atom<string | undefined>(undefined);
+
+export const apiNodeAtom = atom<string | undefined>(undefined);
+
+export const isNodeSelectorOpenAtom = atom<boolean>(false);
+
+// If the user selected a node in the node selector, we save that choice here.
+export const savedRpcNodeAtom = atomWithStorage<string | undefined>(
+  'savedRpcNode',
+  undefined
+);
+
+export const savedApiNodeAtom = atomWithStorage<string | undefined>(
+  'savedApiNode',
+  undefined
+);
