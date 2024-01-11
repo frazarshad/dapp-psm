@@ -1,8 +1,12 @@
 import { Fragment, MouseEventHandler } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { FiChevronDown } from 'react-icons/fi';
-import { networkConfigAtom } from 'store/app';
+import {
+  networkConfigAtom,
+  savedApiNodeAtom,
+  savedRpcNodeAtom,
+} from 'store/app';
 import { networkConfigs } from 'config';
 
 const Item = ({
@@ -32,12 +36,16 @@ const Item = ({
 
 const NetworkDropdown = () => {
   const [networkConfig, setNetworkConfig] = useAtom(networkConfigAtom);
+  const setSavedApi = useSetAtom(savedApiNodeAtom);
+  const setSavedRpc = useSetAtom(savedRpcNodeAtom);
 
   const items = Object.values(networkConfigs).map(config => (
     <Item
       key={config.url}
       onClick={() => {
         setNetworkConfig(config);
+        setSavedApi(undefined);
+        setSavedRpc(undefined);
         window.location.reload();
       }}
       label={config.label}
