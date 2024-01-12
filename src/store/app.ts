@@ -7,7 +7,6 @@ import { mapAtom } from 'utils/helpers';
 import { makeRatio } from '@agoric/zoe/src/contractSupport/ratio';
 import { makeAgoricWalletConnection } from '@agoric/web-components';
 import type { Brand, DisplayInfo, Amount } from '@agoric/ertp/src/types';
-import type { Id as ToastId } from 'react-toastify';
 import { ChainStorageWatcher } from '@agoric/rpc';
 import { loadNetworkConfig } from 'utils/networkConfig';
 
@@ -70,8 +69,6 @@ export const displayFunctionsAtom = atom(get => {
 
 /**  Experimental feature flag. */
 export const previewEnabledAtom = atom(_get => false);
-
-export const provisionToastIdAtom = atom<ToastId | undefined>(undefined);
 
 export const smartWalletProvisionedAtom = atom<boolean | undefined>(undefined);
 
