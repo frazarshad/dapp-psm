@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { toast } from 'react-toastify';
 import { Oval } from 'react-loader-spinner';
@@ -16,7 +16,6 @@ import {
   chainConnectionAtom,
   termsIndexAgreedUponAtom,
   smartWalletProvisionedAtom,
-  provisionToastIdAtom,
   networkConfigPAtom,
   rpcNodeAtom,
   apiNodeAtom,
@@ -34,8 +33,6 @@ import TermsDialog, { currentTermsIndex } from './TermsDialog';
 import clsx from 'clsx';
 import { makeAgoricChainStorageWatcher } from '@agoric/rpc';
 import { sample } from 'lodash-es';
-import ProvisionSmartWalletDialog from './ProvisionSmartWalletDialog';
-import { querySwingsetParams } from 'utils/swingsetParams';
 import { loadable } from 'jotai/utils';
 
 import 'react-toastify/dist/ReactToastify.css';
@@ -43,41 +40,6 @@ import 'styles/globals.css';
 import SettingsButton from './SettingsButton';
 
 const autoCloseDelayMs = 7000;
-
-const useSmartWalletFeeQuery = () => {
-  const [smartWalletFee, setFee] = useState<bigint | null>(null);
-  const [error, setError] = useState<unknown | null>(null);
-  const networkConfig = useAtomValue(loadable(networkConfigPAtom));
-
-  useEffect(() => {
-    if (networkConfig.state === 'loading') {
-      return;
-    }
-    if (networkConfig.state === 'hasError') {
-      setError(networkConfig.error);
-    }
-    const fetchParams = async (rpc: string) => {
-      try {
-        const params = await querySwingsetParams(rpc);
-        console.debug('swingset params', params);
-        setFee(BigInt(params.params.powerFlagFees[0].fee[0].amount));
-      } catch (e: any) {
-        setError(e);
-      }
-    };
-
-    if (networkConfig.state === 'hasData') {
-      const rpc = sample(networkConfig.data.rpcAddrs);
-      if (!rpc) {
-        setError('No RPC available in network config');
-      } else {
-        fetchParams(rpc);
-      }
-    }
-  }, [networkConfig]);
-
-  return { smartWalletFee, error };
-};
 
 const ChainConnection = () => {
   const [connectionInProgress, setConnectionInProgress] = useState(false);
@@ -88,16 +50,9 @@ const ChainConnection = () => {
   const setMetricsIndex = useSetAtom(metricsIndexAtom);
   const setGovernedParamsIndex = useSetAtom(governedParamsIndexAtom);
   const setInstanceIds = useSetAtom(instanceIdsAtom);
-  const [provisionToastId, setProvisionToastId] = useAtom(provisionToastIdAtom);
-  const smartWalletProvisionRequired = useRef(false);
-  const [isSmartWalletProvisioned, setSmartWalletProvisioned] = useAtom(
-    smartWalletProvisionedAtom
-  );
+  const setSmartWalletProvisioned = useSetAtom(smartWalletProvisionedAtom);
   const termsAgreed = useAtomValue(termsIndexAgreedUponAtom);
   const [isTermsDialogOpen, setIsTermsDialogOpen] = useState(false);
-  const [isProvisionDialogOpen, setIsProvisionDialogOpen] = useState(false);
-  const { smartWalletFee, error: smartWalletFeeError } =
-    useSmartWalletFeeQuery();
   const networkConfig = useAtomValue(loadable(networkConfigPAtom));
   const setRpcNode = useSetAtom(rpcNodeAtom);
   const setApiNode = useSetAtom(apiNodeAtom);
@@ -111,38 +66,6 @@ const ChainConnection = () => {
     setIsTermsDialogOpen(false);
     connect(false);
   };
-
-  useEffect(() => {
-    if (
-      isSmartWalletProvisioned === false &&
-      !smartWalletProvisionRequired.current
-    ) {
-      if (smartWalletFeeError) {
-        console.error('Swingset params error', smartWalletFeeError);
-        toast.error('Error reading smart wallet provisioning fee from chain.');
-        return;
-      } else if (smartWalletFee) {
-        smartWalletProvisionRequired.current = true;
-        setIsProvisionDialogOpen(true);
-      }
-    } else if (
-      isSmartWalletProvisioned &&
-      smartWalletProvisionRequired.current
-    ) {
-      smartWalletProvisionRequired.current = false;
-      if (provisionToastId) {
-        toast.dismiss(provisionToastId);
-        setProvisionToastId(undefined);
-      }
-      toast.success('Smart wallet successfully provisioned.');
-    }
-  }, [
-    isSmartWalletProvisioned,
-    provisionToastId,
-    setProvisionToastId,
-    smartWalletFeeError,
-    smartWalletFee,
-  ]);
 
   useEffect(() => {
     if (!chainConnection) return;
@@ -278,11 +201,6 @@ const ChainConnection = () => {
       <TermsDialog
         isOpen={isTermsDialogOpen}
         onClose={handleTermsDialogClose}
-      />
-      <ProvisionSmartWalletDialog
-        isOpen={isProvisionDialogOpen}
-        onClose={() => setIsProvisionDialogOpen(false)}
-        smartWalletFee={smartWalletFee}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiRepeat, FiHelpCircle } from 'react-icons/fi';
 import clsx from 'clsx';
@@ -13,7 +13,6 @@ import {
   instanceIdsAtom,
   chainConnectionAtom,
   smartWalletProvisionedAtom,
-  provisionToastIdAtom,
 } from 'store/app';
 import { clearAmountInputsAtom, instanceAtom } from 'store/swap';
 import {
@@ -31,10 +30,11 @@ import {
   errorsAtom,
 } from 'store/swap';
 import { makeSwapOffer } from 'services/swap';
-import { provisionSmartWallet } from 'services/wallet';
 import DialogSwap from './DialogSwap';
+import ProvisionSmartWalletDialog from './ProvisionSmartWalletDialog';
 
 const Swap = () => {
+  const [isProvisionDialogOpen, setIsProvisionDialogOpen] = useState(false);
   const chainConnection = useAtomValue(chainConnectionAtom);
   const isSmartWalletProvisioned = useAtomValue(smartWalletProvisionedAtom);
   const brandToInfo = useAtomValue(brandToInfoAtom);
@@ -54,7 +54,6 @@ const Swap = () => {
   const { mintLimit } = useAtomValue(governedParamsAtom) ?? {};
   const { anchorPoolBalance, mintedPoolBalance } =
     useAtomValue(metricsAtom) ?? {};
-  const setProvisionToastId = useSetAtom(provisionToastIdAtom);
 
   const anchorPetnames = [...instanceIds.keys()];
   const areAnchorsLoaded =
@@ -75,12 +74,13 @@ const Swap = () => {
     }
   }, [swapDirection, setSwapDirection]);
 
-  const provision = () => {
-    assert(chainConnection);
-    provisionSmartWallet(chainConnection, setProvisionToastId);
+  const showProvisionDialog = () => {
+    setIsProvisionDialogOpen(true);
   };
 
   const handleSwap = useCallback(async () => {
+    setIsProvisionDialogOpen(false);
+
     if (!areAnchorsLoaded || !chainConnection) return;
 
     const fromValue = fromAmount?.value;
@@ -234,20 +234,24 @@ const Swap = () => {
               : 'text-gray-500 cursor-not-allowed'
           )}
           disabled={isSmartWalletProvisioned === undefined}
-          onClick={isSmartWalletProvisioned === false ? provision : handleSwap}
+          onClick={
+            isSmartWalletProvisioned === false
+              ? showProvisionDialog
+              : handleSwap
+          }
         >
           <motion.div className="relative flex flex-row w-full justify-center items-center">
-            <div className="w-6" />
-            <div className="text-white w-fit">
-              {isSmartWalletProvisioned === false
-                ? 'Provision Smart Wallet'
-                : 'Swap'}
-            </div>
+            <div className="text-white w-fit">Swap</div>
           </motion.div>
         </motion.button>
         {errorsToRender}
       </motion.div>
       <DialogSwap />
+      <ProvisionSmartWalletDialog
+        isOpen={isProvisionDialogOpen}
+        onClose={() => setIsProvisionDialogOpen(false)}
+        onConfirm={handleSwap}
+      />
     </>
   );
 };
