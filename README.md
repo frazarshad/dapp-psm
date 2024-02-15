@@ -24,3 +24,20 @@ To deploy, push to that branch. e.g. if you've qualified main,
 ```
 git push origin main:beta
 ```
+
+## Notices
+
+To display a notice banner in the app, in the network-config (e.g. https://main.agoric.net/network-config), add an entry to `notices` as demonstrated:
+
+```json
+{
+...
+  "notices": [
+    {
+      "start": "2020-01-01",
+      "end": "2040-01-01",
+      "message": "Hello world"
+    }
+  ]
+}
+```
