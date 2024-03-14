@@ -44,9 +44,14 @@ describe('Swap Tokens Tests', () => {
   });
 
   it('should swap tokens from IST to stable', () => {
+    let ISTbalance;
+
     // Connect wallet
     cy.visit('/');
     cy.get('button').contains('Connect Keplr').click();
+
+    cy.addNewTokensFound();
+    cy.getTokenAmount('IST').then(amount => (ISTbalance = amount));
 
     // Select asset and swap positions
     cy.get('button').contains('Select asset').click();
@@ -60,12 +65,20 @@ describe('Swap Tokens Tests', () => {
     // Confirm transactions
     cy.confirmTransaction();
     cy.get('div').contains('Swap Completed').should('be.visible');
+
+    cy.getTokenAmount('IST').then(amount =>
+      expect(amount).to.equal(ISTbalance - 1.25)
+    );
   });
 
   it('should swap tokens from stable to IST', () => {
+    let ISTbalance;
+
     // Connect wallet
     cy.visit('/');
     cy.get('button').contains('Connect Keplr').click();
+
+    cy.getTokenAmount('IST').then(amount => (ISTbalance = amount));
 
     // Select asset
     cy.get('button').contains('Select asset').click();
@@ -78,5 +91,9 @@ describe('Swap Tokens Tests', () => {
     // Confirm transactions
     cy.confirmTransaction();
     cy.get('div').contains('Swap Completed').should('be.visible');
+
+    cy.getTokenAmount('IST').then(amount =>
+      expect(amount).to.equal(ISTbalance + 1.25)
+    );
   });
 });
