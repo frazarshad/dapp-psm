@@ -8,10 +8,7 @@ export default mergeConfig(
     test: {
       setupFiles: ['src/installSesLockdown.ts'],
       environment: 'happy-dom',
-      exclude: [
-        ...configDefaults.exclude,
-        'tests/e2e/**'
-      ]
+      exclude: [...configDefaults.exclude, 'tests/e2e/**'],
     },
   })
 );
