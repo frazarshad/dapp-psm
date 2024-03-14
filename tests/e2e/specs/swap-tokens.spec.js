@@ -58,8 +58,8 @@ describe('Swap Tokens Tests', () => {
     cy.get('button').contains('USDC_axl').click();
     cy.get('svg.transform.rotate-90').click();
 
-    // Swap 1.25 IST
-    cy.get('input[type="number"]').first().type(1.25);
+    // Swap 1 IST
+    cy.get('input[type="number"]').first().type(1);
     cy.get('button').contains('Swap').click();
 
     // Confirm transactions
@@ -67,7 +67,7 @@ describe('Swap Tokens Tests', () => {
     cy.get('div').contains('Swap Completed').should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
-      expect(amount).to.equal(ISTbalance - 1.25)
+      expect(amount).to.equal(ISTbalance - 1)
     );
   });
 
@@ -84,8 +84,8 @@ describe('Swap Tokens Tests', () => {
     cy.get('button').contains('Select asset').click();
     cy.get('button').contains('USDC_axl').click();
 
-    // Swap 1.25 USDC_axl
-    cy.get('input[type="number"]').first().type(1.25);
+    // Swap 1 USDC_axl
+    cy.get('input[type="number"]').first().type(1);
     cy.get('button').contains('Swap').click();
 
     // Confirm transactions
@@ -93,7 +93,7 @@ describe('Swap Tokens Tests', () => {
     cy.get('div').contains('Swap Completed').should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
-      expect(amount).to.equal(ISTbalance + 1.25)
+      expect(amount).to.equal(ISTbalance + 1)
     );
   });
 });
