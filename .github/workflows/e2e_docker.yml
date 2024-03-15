@@ -35,7 +35,7 @@ jobs:
 
       - name: Run e2e tests
         run: |
-          docker-compose -f docker-compose.yml --profile synpress up --build --exit-code-from synpress
+          docker-compose -f tests/e2e/docker-compose.yml --profile synpress up --build --exit-code-from synpress
         env:
           COMPOSE_DOCKER_CLI_BUILD: 1
           DOCKER_BUILDKIT: 1

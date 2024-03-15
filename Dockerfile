@@ -6,7 +6,7 @@ WORKDIR /app
 
 RUN apt update && apt install -y nginx
 
-COPY nginx.conf /etc/nginx/sites-available/default
+COPY tests/e2e/nginx.conf /etc/nginx/sites-available/default
 
 COPY . .
 
