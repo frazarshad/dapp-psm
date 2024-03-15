@@ -11,7 +11,8 @@
     "format": "prettier --write . && yarn lint --fix",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "test:e2e": "EXTENSION=keplr synpress run --configFile=tests/e2e/synpress.config.cjs"
+    "test:e2e": "EXTENSION=keplr synpress run --configFile=tests/e2e/synpress.config.cjs",
+    "test:e2e:ci": "start-server-and-test 'yarn dev' http-get://localhost:5173 'yarn test:e2e'"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -53,6 +54,7 @@
     "react-icons": "^4.4.0",
     "react-loader-spinner": "~5.4.5",
     "react-toastify": "^9.0.8",
+    "start-server-and-test": "^2.0.3",
     "tailwindcss": "^3.1.8",
     "typescript": "^4.6.4",
     "vite": "^3.2.7",
