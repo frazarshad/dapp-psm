@@ -59,7 +59,7 @@ jobs:
         with:
           name: e2e-artifacts
           path: |
-            docker/videos
-            docker/videos-ci
-            docker/screenshots
+            tests/e2e/docker/videos
+            tests/e2e/docker/videos-ci
+            tests/e2e/docker/screenshots
         continue-on-error: true
