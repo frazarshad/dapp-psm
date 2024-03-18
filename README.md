@@ -6,9 +6,6 @@ UI for Inter Protocol PSM
 
 `yarn dev` to start a local HMR server.
 
-By default it it will connect to the prod Wallet UI. To connect to a local one, use
-http://127.0.0.1:5173/?wallet=local .
-
 ## Contributing
 
 For bugs and feature requests, open a [new issue](https://github.com/Agoric/dapp-psm/issues/new).
