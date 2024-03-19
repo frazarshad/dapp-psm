@@ -1,3 +1,5 @@
+[![E2E tests](https://github.com/Agoric/dapp-psm/actions/workflows/e2e_tests.yml/badge.svg)](https://github.com/Agoric/dapp-psm/actions/workflows/e2e_tests.yml)
+
 # dapp-psm
 
 UI for Inter Protocol PSM
