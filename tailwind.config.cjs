@@ -12,6 +12,7 @@ module.exports = {
         secondary: 'var(--color-secondary)',
         primaryDark: 'var(--color-primary-dark)',
         currentColor: 'var(--currentColor)',
+        interGreen: 'rgba(var(--color-inter-green), <alpha-value>)',
       },
       fontFamily: {
         sans: [
