@@ -1,5 +1,21 @@
 /* eslint-disable ui-testing/no-disabled-tests */
 describe('Swap Tokens Tests', () => {
+  const limitFloat = float => parseFloat(float.toFixed(5));
+  const amountToSwap = 0.001;
+  const phrasesList = {
+    emerynet: {
+      walletButton: 'li[data-value="testnet"]',
+      psmNetwork: 'Agoric Emerynet',
+      token: 'ToyUSD',
+    },
+    local: {
+      walletButton: 'li[data-value="local"]',
+      psmNetwork: 'Local Network',
+      token: 'USDC_axl',
+    },
+  };
+  const networkPhrases = phrasesList[Cypress.env('AGORIC_NET')];
+
   it(`should connect with Agoric Chain on https;//wallet.agoric.app`, () => {
     cy.origin('https://wallet.agoric.app/', () => {
       cy.visit('/');
@@ -8,18 +24,22 @@ describe('Swap Tokens Tests', () => {
       expect(taskCompleted).to.be.true;
     });
 
-    cy.origin('https://wallet.agoric.app/', () => {
-      cy.visit('/wallet/');
+    cy.origin(
+      'https://wallet.agoric.app/',
+      { args: { networkPhrases } },
+      ({ networkPhrases }) => {
+        cy.visit('/wallet/');
 
-      cy.get('input.PrivateSwitchBase-input').click();
-      cy.contains('Proceed').click();
+        cy.get('input.PrivateSwitchBase-input').click();
+        cy.contains('Proceed').click();
 
-      cy.get('button[aria-label="Settings"]').click();
+        cy.get('button[aria-label="Settings"]').click();
 
-      cy.get('#demo-simple-select').click();
-      cy.get('li[data-value="local"]').click();
-      cy.contains('button', 'Connect').click();
-    });
+        cy.get('#demo-simple-select').click();
+        cy.get(networkPhrases.walletButton).click();
+        cy.contains('button', 'Connect').click();
+      }
+    );
 
     cy.acceptAccess().then(taskCompleted => {
       expect(taskCompleted).to.be.true;
@@ -31,7 +51,7 @@ describe('Swap Tokens Tests', () => {
 
     // Switch to local network
     cy.get('button').contains('Agoric Mainnet').click();
-    cy.get('button').contains('Local Network').click();
+    cy.get('button').contains(networkPhrases.psmNetwork).click();
 
     // Click the connect button
     cy.get('button').contains('Connect Keplr').click();
@@ -55,19 +75,21 @@ describe('Swap Tokens Tests', () => {
 
     // Select asset and swap positions
     cy.get('button').contains('Select asset').click();
-    cy.get('button').contains('USDC_axl').click();
+    cy.get('button').contains(networkPhrases.token).click();
     cy.get('svg.transform.rotate-90').click();
 
-    // Swap 1 IST
-    cy.get('input[type="number"]').first().type(1);
+    // Swap IST
+    cy.get('input[type="number"]').first().type(amountToSwap);
     cy.get('button').contains('Swap').click();
 
     // Confirm transactions
     cy.confirmTransaction();
-    cy.get('div').contains('Swap Completed').should('be.visible');
+    cy.get('div')
+      .contains('Swap Completed', { timeout: 60000 })
+      .should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
-      expect(amount).to.equal(ISTbalance - 1)
+      expect(amount).to.equal(limitFloat(ISTbalance - amountToSwap))
     );
   });
 
@@ -82,18 +104,20 @@ describe('Swap Tokens Tests', () => {
 
     // Select asset
     cy.get('button').contains('Select asset').click();
-    cy.get('button').contains('USDC_axl').click();
+    cy.get('button').contains(networkPhrases.token).click();
 
-    // Swap 1 USDC_axl
-    cy.get('input[type="number"]').first().type(1);
+    // Swap USDC_axl
+    cy.get('input[type="number"]').first().type(amountToSwap);
     cy.get('button').contains('Swap').click();
 
     // Confirm transactions
     cy.confirmTransaction();
-    cy.get('div').contains('Swap Completed').should('be.visible');
+    cy.get('div')
+      .contains('Swap Completed', { timeout: 60000 })
+      .should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
-      expect(amount).to.equal(ISTbalance + 1)
+      expect(amount).to.equal(limitFloat(ISTbalance + amountToSwap))
     );
   });
 });
