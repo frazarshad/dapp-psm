@@ -2,6 +2,7 @@
 describe('Swap Tokens Tests', () => {
   const limitFloat = float => parseFloat(float.toFixed(5));
   const amountToSwap = 0.001;
+  const transactionFee = 0.2;
   const phrasesList = {
     emerynet: {
       walletButton: 'li[data-value="testnet"]',
@@ -89,7 +90,10 @@ describe('Swap Tokens Tests', () => {
       .should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
-      expect(amount).to.equal(limitFloat(istBalance - amountToSwap))
+      expect(amount).to.be.oneOf([
+        limitFloat(istBalance - amountToSwap),
+        limitFloat(istBalance - amountToSwap - transactionFee),
+      ])
     );
   });
 
@@ -117,7 +121,10 @@ describe('Swap Tokens Tests', () => {
       .should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
-      expect(amount).to.equal(limitFloat(ISTbalance + amountToSwap))
+      expect(amount).to.be.oneOf([
+        limitFloat(ISTbalance + amountToSwap),
+        limitFloat(ISTbalance + amountToSwap - transactionFee),
+      ])
     );
   });
 });
