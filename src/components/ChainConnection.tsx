@@ -5,6 +5,7 @@ import { Oval } from 'react-loader-spinner';
 import {
   makeAgoricWalletConnection,
   AgoricKeplrConnectionErrors as Errors,
+  suggestChain,
 } from '@agoric/web-components';
 import {
   brandToInfoAtom,
@@ -17,6 +18,7 @@ import {
   termsIndexAgreedUponAtom,
   smartWalletProvisionedAtom,
   networkConfigPAtom,
+  networkConfigAtom,
   rpcNodeAtom,
   apiNodeAtom,
   chainConnectionErrorAtom,
@@ -59,6 +61,7 @@ const ChainConnection = () => {
   const setChainConnectionError = useSetAtom(chainConnectionErrorAtom);
   const savedApi = useAtomValue(savedApiNodeAtom);
   const savedRpc = useAtomValue(savedRpcNodeAtom);
+  const networkConfigInfo = useAtomValue(networkConfigAtom);
 
   const areLatestTermsAgreed = termsAgreed === currentTermsIndex;
 
@@ -123,6 +126,13 @@ const ChainConnection = () => {
         if (!rpc || !api || !chainId) {
           throw new Error(Errors.networkConfig);
         }
+
+        try {
+          await suggestChain(networkConfigInfo.url);
+        } catch {
+          throw new Error(Errors.enableKeplr);
+        }
+
         setRpcNode(rpc);
         setApiNode(api);
         const watcher = makeAgoricChainStorageWatcher(api, chainId, e => {
@@ -161,6 +171,7 @@ const ChainConnection = () => {
   }, [
     connectionInProgress,
     networkConfig,
+    networkConfigInfo.url,
     savedApi,
     savedRpc,
     setApiNode,
