@@ -11,7 +11,7 @@
     "format": "prettier --write . && yarn lint --fix",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "test:e2e": "EXTENSION=keplr synpress run --configFile=tests/e2e/synpress.config.cjs",
+    "test:e2e": "EXTENSION=keplr SKIP_EXTENSION_SETUP=true synpress run --configFile=tests/e2e/synpress.config.cjs",
     "test:e2e:ci": "start-server-and-test 'yarn dev' http-get://localhost:5173 'yarn test:e2e'"
   },
   "dependencies": {
@@ -23,7 +23,7 @@
     "@agoric/ertp": "^0.16.2",
     "@agoric/rpc": "^0.9.0",
     "@agoric/smart-wallet": "^0.5.3",
-    "@agoric/synpress": "^3.7.2-beta.12",
+    "@agoric/synpress": "^3.8.1",
     "@agoric/ui-components": "^0.9.0",
     "@agoric/web-components": "^0.15.0",
     "@agoric/zoe": "^0.26.2",
