@@ -1,50 +1,46 @@
 /* eslint-disable ui-testing/no-disabled-tests */
+import { DEFAULT_TIMEOUT, phrasesList } from '../utils';
+
 describe('Swap Tokens Tests', () => {
   const limitFloat = float => parseFloat(float.toFixed(5));
   const amountToSwap = 0.001;
   const transactionFee = 0.2;
-  const phrasesList = {
-    emerynet: {
-      walletButton: 'li[data-value="testnet"]',
-      psmNetwork: 'Agoric Emerynet',
-      token: 'ToyUSD',
-    },
-    local: {
-      walletButton: 'li[data-value="local"]',
-      psmNetwork: 'Local Network',
-      token: 'USDC_axl',
-    },
+  const walletAddress = {
+    value: null,
   };
   const networkPhrases = phrasesList[Cypress.env('AGORIC_NET')];
 
-  it(`should connect with Agoric Chain on https;//wallet.agoric.app`, () => {
-    cy.origin('https://wallet.agoric.app/', () => {
-      cy.visit('/');
-    });
-    cy.acceptAccess().then(taskCompleted => {
-      expect(taskCompleted).to.be.true;
-    });
+  it('should setup wallet for test', () => {
+    if (networkPhrases.isLocal) {
+      cy.setupWallet();
+    } else {
+      cy.setupWallet({
+        createNewWallet: true,
+        walletName: 'my created wallet',
+        selectedChains: ['Agoric'],
+      });
 
-    cy.origin(
-      'https://wallet.agoric.app/',
-      { args: { networkPhrases } },
-      ({ networkPhrases }) => {
-        cy.visit('/wallet/');
+      cy.getWalletAddress('Agoric').then(
+        address => (walletAddress.value = address)
+      );
 
-        cy.get('input.PrivateSwitchBase-input').click();
-        cy.contains('Proceed').click();
+      // Provision IST for wallet
+      cy.origin(
+        'https://emerynet.faucet.agoric.net',
+        { args: { walletAddress } },
+        ({ walletAddress }) => {
+          cy.visit('/');
+          cy.get('[id="address"]').first().type(walletAddress.value);
+          cy.get('[type="radio"][value="client"]').click();
+          cy.get('[name="clientType"]').select('REMOTE_WALLET');
 
-        cy.get('button[aria-label="Settings"]').click();
-
-        cy.get('#demo-simple-select').click();
-        cy.get(networkPhrases.walletButton).click();
-        cy.contains('button', 'Connect').click();
-      }
-    );
-
-    cy.acceptAccess().then(taskCompleted => {
-      expect(taskCompleted).to.be.true;
-    });
+          cy.get('[type="submit"]').first().click();
+          cy.get('body')
+            .contains('success', { timeout: DEFAULT_TIMEOUT })
+            .should('exist');
+        }
+      );
+    }
   });
 
   it('should connect with wallet', () => {
@@ -83,16 +79,27 @@ describe('Swap Tokens Tests', () => {
     cy.get('input[type="number"]').first().type(amountToSwap);
     cy.get('button').contains('Swap').click();
 
+    // Should show dialog for wallet provision
+    if (!networkPhrases.isLocal) {
+      cy.contains('h3', 'Smart Wallet Required').should('exist');
+      cy.contains('button', 'Proceed').click();
+    }
+
     // Confirm transactions
     cy.confirmTransaction();
     cy.get('div')
-      .contains('Swap Completed', { timeout: 60000 })
+      .contains('Swap Completed', { timeout: DEFAULT_TIMEOUT })
       .should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
       expect(amount).to.be.oneOf([
-        limitFloat(istBalance - amountToSwap),
-        limitFloat(istBalance - amountToSwap - transactionFee),
+        limitFloat(istBalance - amountToSwap - networkPhrases.provisionFee),
+        limitFloat(
+          istBalance -
+            amountToSwap -
+            networkPhrases.provisionFee -
+            transactionFee
+        ),
       ])
     );
   });
@@ -117,7 +124,7 @@ describe('Swap Tokens Tests', () => {
     // Confirm transactions
     cy.confirmTransaction();
     cy.get('div')
-      .contains('Swap Completed', { timeout: 60000 })
+      .contains('Swap Completed', { timeout: DEFAULT_TIMEOUT })
       .should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
