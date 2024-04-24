@@ -1,26 +1,12 @@
 /* eslint-disable ui-testing/no-disabled-tests */
+import { DEFAULT_TIMEOUT, phrasesList } from '../utils';
+
 describe('Swap Tokens Tests', () => {
   const limitFloat = float => parseFloat(float.toFixed(5));
   const amountToSwap = 0.001;
   const transactionFee = 0.2;
   const walletAddress = {
     value: null,
-  };
-  const phrasesList = {
-    emerynet: {
-      walletButton: 'li[data-value="testnet"]',
-      psmNetwork: 'Agoric Emerynet',
-      token: 'ToyUSD',
-      isLocal: false,
-      provisionFee: 0.75,
-    },
-    local: {
-      walletButton: 'li[data-value="local"]',
-      psmNetwork: 'Local Network',
-      token: 'USDC_axl',
-      isLocal: true,
-      provisionFee: 0,
-    },
   };
   const networkPhrases = phrasesList[Cypress.env('AGORIC_NET')];
 
@@ -50,7 +36,7 @@ describe('Swap Tokens Tests', () => {
 
           cy.get('[type="submit"]').first().click();
           cy.get('body')
-            .contains('success', { timeout: 60000 })
+            .contains('success', { timeout: DEFAULT_TIMEOUT })
             .should('exist');
         }
       );
@@ -102,7 +88,7 @@ describe('Swap Tokens Tests', () => {
     // Confirm transactions
     cy.confirmTransaction();
     cy.get('div')
-      .contains('Swap Completed', { timeout: 60000 })
+      .contains('Swap Completed', { timeout: DEFAULT_TIMEOUT })
       .should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
@@ -138,7 +124,7 @@ describe('Swap Tokens Tests', () => {
     // Confirm transactions
     cy.confirmTransaction();
     cy.get('div')
-      .contains('Swap Completed', { timeout: 60000 })
+      .contains('Swap Completed', { timeout: DEFAULT_TIMEOUT })
       .should('be.visible');
 
     cy.getTokenAmount('IST').then(amount =>
