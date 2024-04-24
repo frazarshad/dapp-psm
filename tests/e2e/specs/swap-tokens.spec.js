@@ -24,40 +24,20 @@ describe('Swap Tokens Tests', () => {
   };
   const networkPhrases = phrasesList[Cypress.env('AGORIC_NET')];
 
-  it(`should connect with Agoric Chain on https;//wallet.agoric.app`, () => {
+  it('should setup wallet for test', () => {
     if (networkPhrases.isLocal) {
       cy.setupWallet();
     } else {
       cy.setupWallet({
         createNewWallet: true,
         walletName: 'my created wallet',
-      });
-      cy.origin('https://wallet.agoric.app/', () => {
-        cy.visit('/wallet/');
-
-        cy.get('input.PrivateSwitchBase-input').click();
-        cy.contains('Proceed').click();
-      });
-      cy.acceptAccess();
-
-      cy.origin(
-        'https://wallet.agoric.app/',
-        { args: { networkPhrases } },
-        ({ networkPhrases }) => {
-          cy.get('button[aria-label="Settings"]').click();
-
-          cy.get('#demo-simple-select').click();
-          cy.get(networkPhrases.walletButton).click();
-          cy.contains('button', 'Connect').click();
-          cy.contains(/agoric[A-Za-z0-9]{39}/).spread(element => {
-            return element.innerHTML.match(/agoric.{39}/)[0];
-          });
-        }
-      ).then(address => {
-        walletAddress.value = address;
+        selectedChains: ['Agoric'],
       });
 
-      cy.acceptAccess();
+      cy.getWalletAddress('Agoric').then(
+        address => (walletAddress.value = address)
+      );
+
       // Provision IST for wallet
       cy.origin(
         'https://emerynet.faucet.agoric.net',
@@ -69,7 +49,9 @@ describe('Swap Tokens Tests', () => {
           cy.get('[name="clientType"]').select('REMOTE_WALLET');
 
           cy.get('[type="submit"]').first().click();
-          cy.get('body').contains('success').should('exist');
+          cy.get('body')
+            .contains('success', { timeout: 60000 })
+            .should('exist');
         }
       );
     }
