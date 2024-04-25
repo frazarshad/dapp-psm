@@ -27,8 +27,8 @@ describe('Swap Tokens Tests', () => {
       // Provision IST for wallet
       cy.origin(
         'https://emerynet.faucet.agoric.net',
-        { args: { walletAddress } },
-        ({ walletAddress }) => {
+        { args: { walletAddress, DEFAULT_TIMEOUT } },
+        ({ walletAddress, DEFAULT_TIMEOUT }) => {
           cy.visit('/');
           cy.get('[id="address"]').first().type(walletAddress.value);
           cy.get('[type="radio"][value="client"]').click();
