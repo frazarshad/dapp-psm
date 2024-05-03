@@ -7,6 +7,16 @@ on:
     branches: [main]
   schedule:
     - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Select the blockchain network for testing'
+        required: false
+        default: 'emerynet'
+        type: choice
+        options:
+          - local
+          - emerynet
 
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label ||
@@ -16,6 +26,9 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+
+    env:
+      IS_EMERYNET_TEST: ${{ github.event_name == 'schedule' || inputs.network == 'emerynet' }}
 
     steps:
       - name: Checkout
@@ -40,8 +53,8 @@ jobs:
           docker-compose -f tests/e2e/docker-compose.yml --profile $SYNPRESS_PROFILE  up --build --exit-code-from synpress
         env:
           # conditionals based on github event
-          SYNPRESS_PROFILE: ${{ github.event_name == 'schedule' && 'daily-tests' || 'synpress' }}
-          CYPRESS_AGORIC_NET: ${{ github.event_name == 'schedule' && 'emerynet' || 'local' }}
+          SYNPRESS_PROFILE: ${{ env.IS_EMERYNET_TEST == 'true' && 'daily-tests' || 'synpress' }}
+          CYPRESS_AGORIC_NET: ${{ env.IS_EMERYNET_TEST == 'true' && 'emerynet' || 'local' }}
           # for docker-compose.yml
           COMPOSE_DOCKER_CLI_BUILD: 1
           DOCKER_BUILDKIT: 1
