@@ -17,6 +17,10 @@ on:
         options:
           - local
           - emerynet
+      phrase:
+        description: 'The mnemonic phrase for the account to use in testing'
+        required: false
+        type: text
 
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label ||
@@ -65,6 +69,7 @@ jobs:
           ANVIL_FORK_URL: ${{ secrets.ANVIL_FORK_URL }}
           GH_PAT: ${{ secrets.GH_PAT }}
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
+          CYPRESS_MNEMONIC_PHRASE: ${{ inputs.phrase }}
           # cypress dashboard
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
