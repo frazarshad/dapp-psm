@@ -9,9 +9,14 @@ describe('Swap Tokens Tests', () => {
     value: null,
   };
   const networkPhrases = phrasesList[Cypress.env('AGORIC_NET')];
+  const customWalletPhrase = phrasesList[Cypress.env('MNEMONIC_PHRASE')];
 
   it('should setup wallet for test', () => {
-    if (networkPhrases.isLocal) {
+    if (customWalletPhrase) {
+      cy.setupWallet({
+        secretWords: customWalletPhrase,
+      });
+    } else if (networkPhrases.isLocal) {
       cy.setupWallet();
     } else {
       cy.setupWallet({
