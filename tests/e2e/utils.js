@@ -6,13 +6,11 @@ export const phrasesList = {
     psmNetwork: 'Agoric Emerynet',
     token: 'ToyUSD',
     isLocal: false,
-    provisionFee: 0.75,
   },
   local: {
     walletButton: 'li[data-value="local"]',
     psmNetwork: 'Local Network',
     token: 'USDC_axl',
     isLocal: true,
-    provisionFee: 0,
   },
 };

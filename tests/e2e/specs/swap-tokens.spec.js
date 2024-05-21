@@ -9,7 +9,7 @@ describe('Swap Tokens Tests', () => {
     value: null,
   };
   const networkPhrases = phrasesList[Cypress.env('AGORIC_NET')];
-  const customWalletPhrase = phrasesList[Cypress.env('MNEMONIC_PHRASE')];
+  const customWalletPhrase = Cypress.env('MNEMONIC_PHRASE');
 
   it('should setup wallet for test', () => {
     if (customWalletPhrase) {
@@ -85,9 +85,11 @@ describe('Swap Tokens Tests', () => {
     cy.get('button').contains('Swap').click();
 
     // Should show dialog for wallet provision
-    if (!networkPhrases.isLocal) {
+    let provisionFee = 0;
+    if (!customWalletPhrase && !networkPhrases.isLocal) {
       cy.contains('h3', 'Smart Wallet Required').should('exist');
       cy.contains('button', 'Proceed').click();
+      provisionFee = 0.75;
     }
 
     // Confirm transactions
@@ -98,13 +100,8 @@ describe('Swap Tokens Tests', () => {
 
     cy.getTokenAmount('IST').then(amount =>
       expect(amount).to.be.oneOf([
-        limitFloat(istBalance - amountToSwap - networkPhrases.provisionFee),
-        limitFloat(
-          istBalance -
-            amountToSwap -
-            networkPhrases.provisionFee -
-            transactionFee
-        ),
+        limitFloat(istBalance - amountToSwap - provisionFee),
+        limitFloat(istBalance - amountToSwap - provisionFee - transactionFee),
       ])
     );
   });
